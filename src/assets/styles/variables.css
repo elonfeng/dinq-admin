@@ -1,0 +1,111 @@
+/**
+ * CSS Variables for Light & Dark Themes
+ * Supports theme switching
+ */
+
+:root {
+  /* Colors - Light Theme */
+  --color-primary: #4096ff;
+  --color-primary-hover: #5ea8ff;
+  --color-success: #52c41a;
+  --color-warning: #faad14;
+  --color-error: #ff4d4f;
+  --color-info: #1677ff;
+
+  /* Text Colors */
+  --color-text-primary: #262626;
+  --color-text-secondary: #595959;
+  --color-text-tertiary: #8c8c8c;
+  --color-text-disabled: #bfbfbf;
+
+  /* Background Colors */
+  --color-bg-base: #ffffff;
+  --color-bg-container: #ffffff;
+  --color-bg-elevated: #ffffff;
+  --color-bg-layout: #f5f5f5;
+  --color-bg-spotlight: #fafafa;
+
+  /* Border Colors */
+  --color-border: rgba(0, 0, 0, 0.06);
+  --color-border-secondary: rgba(0, 0, 0, 0.12);
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03), 0 1px 6px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  /* Typography */
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 24px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Transitions */
+  --transition-fast: 0.1s;
+  --transition-base: 0.2s;
+  --transition-slow: 0.3s;
+}
+
+/* Dark Theme Variables */
+[data-theme='dark'] {
+  /* Colors - Dark Theme */
+  --color-primary: #5ea8ff;
+  --color-primary-hover: #7db8ff;
+  --color-success: #73d13d;
+  --color-warning: #ffc53d;
+  --color-error: #ff7875;
+  --color-info: #69c0ff;
+
+  /* Text Colors */
+  --color-text-primary: #e8e8e8;
+  --color-text-secondary: #b8b8b8;
+  --color-text-tertiary: #8c8c8c;
+  --color-text-disabled: #595959;
+
+  /* Background Colors */
+  --color-bg-base: #141414;
+  --color-bg-container: #1f1f1f;
+  --color-bg-elevated: #282828;
+  --color-bg-layout: #000000;
+  --color-bg-spotlight: #2a2a2a;
+
+  /* Border Colors */
+  --color-border: rgba(255, 255, 255, 0.12);
+  --color-border-secondary: rgba(255, 255, 255, 0.18);
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24), 0 1px 6px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.32);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.40);
+}
+
+/* Usage Example */
+/*
+.custom-component {
+  background-color: var(--color-bg-container);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+}
+*/
