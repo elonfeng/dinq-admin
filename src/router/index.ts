@@ -20,28 +20,28 @@ const router = createRouter({
     },
     {
       path: '/',
-      redirect: '/monitor',
+      redirect: '/verification-review',
     },
-    {
-      path: '/monitor',
-      name: 'monitor',
-      component: () => import('@/views/MonitorView.vue'),
-      meta: {
-        title: '系统监控',
-        icon: 'DashboardOutlined',
-        requiresAuth: true,
-      },
-    },
-    {
-      path: '/task-history',
-      name: 'task-history',
-      component: () => import('@/views/TaskHistoryView.vue'),
-      meta: {
-        title: '任务历史',
-        icon: 'HistoryOutlined',
-        requiresAuth: true,
-      },
-    },
+    // {
+    //   path: '/monitor',
+    //   name: 'monitor',
+    //   component: () => import('@/views/MonitorView.vue'),
+    //   meta: {
+    //     title: '系统监控',
+    //     icon: 'DashboardOutlined',
+    //     requiresAuth: true,
+    //   },
+    // },
+    // {
+    //   path: '/task-history',
+    //   name: 'task-history',
+    //   component: () => import('@/views/TaskHistoryView.vue'),
+    //   meta: {
+    //     title: '任务历史',
+    //     icon: 'HistoryOutlined',
+    //     requiresAuth: true,
+    //   },
+    // },
     {
       path: '/verification-review',
       name: 'verification-review',
@@ -79,6 +79,16 @@ const router = createRouter({
       meta: {
         title: '邀请码管理',
         icon: 'GiftOutlined',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/openings',
+      name: 'openings',
+      component: () => import('@/views/OpeningsView.vue'),
+      meta: {
+        title: '职位管理',
+        icon: 'TeamOutlined',
         requiresAuth: true,
       },
     },

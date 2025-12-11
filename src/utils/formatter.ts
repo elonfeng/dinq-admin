@@ -48,19 +48,30 @@ export function formatRelativeTime(date: string | Date, locale: string = 'zh-CN'
     const d = typeof date === 'string' ? new Date(date) : date
     const now = new Date()
     const diffMs = now.getTime() - d.getTime()
-    const diffSec = Math.floor(diffMs / 1000)
+    const isPast = diffMs >= 0
+    const absDiffMs = Math.abs(diffMs)
+    const diffSec = Math.floor(absDiffMs / 1000)
     const diffMin = Math.floor(diffSec / 60)
     const diffHour = Math.floor(diffMin / 60)
     const diffDay = Math.floor(diffHour / 24)
 
+    // 如果差值很小（10秒内），显示"刚刚"
+    if (diffSec < 10) {
+      return locale === 'zh-CN' ? '刚刚' : 'just now'
+    }
+
+    const suffix = isPast
+      ? (locale === 'zh-CN' ? '前' : ' ago')
+      : (locale === 'zh-CN' ? '后' : ' later')
+
     if (diffSec < 60) {
-      return locale === 'zh-CN' ? `${diffSec} 秒前` : `${diffSec} seconds ago`
+      return locale === 'zh-CN' ? `${diffSec} 秒${suffix}` : `${diffSec} seconds${suffix}`
     } else if (diffMin < 60) {
-      return locale === 'zh-CN' ? `${diffMin} 分钟前` : `${diffMin} minutes ago`
+      return locale === 'zh-CN' ? `${diffMin} 分钟${suffix}` : `${diffMin} minutes${suffix}`
     } else if (diffHour < 24) {
-      return locale === 'zh-CN' ? `${diffHour} 小时前` : `${diffHour} hours ago`
+      return locale === 'zh-CN' ? `${diffHour} 小时${suffix}` : `${diffHour} hours${suffix}`
     } else if (diffDay < 7) {
-      return locale === 'zh-CN' ? `${diffDay} 天前` : `${diffDay} days ago`
+      return locale === 'zh-CN' ? `${diffDay} 天${suffix}` : `${diffDay} days${suffix}`
     } else {
       return formatDate(d, locale)
     }

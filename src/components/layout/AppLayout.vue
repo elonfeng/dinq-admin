@@ -11,6 +11,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   GiftOutlined,
+  SolutionOutlined,
 } from '@ant-design/icons-vue'
 import AppHeader from './AppHeader.vue'
 
@@ -20,18 +21,18 @@ const route = useRoute()
 const collapsed = ref(false)
 
 const menuItems = [
-  {
-    key: 'monitor',
-    icon: DashboardOutlined,
-    label: '系统监控',
-    path: '/monitor',
-  },
-  {
-    key: 'task-history',
-    icon: HistoryOutlined,
-    label: '任务历史',
-    path: '/task-history',
-  },
+  // {
+  //   key: 'monitor',
+  //   icon: DashboardOutlined,
+  //   label: '系统监控',
+  //   path: '/monitor',
+  // },
+  // {
+  //   key: 'task-history',
+  //   icon: HistoryOutlined,
+  //   label: '任务历史',
+  //   path: '/task-history',
+  // },
   {
     key: 'verification-review',
     icon: SafetyCertificateOutlined,
@@ -55,6 +56,12 @@ const menuItems = [
     icon: NotificationOutlined,
     label: '发送通知',
     path: '/notification-send',
+  },
+  {
+    key: 'openings',
+    icon: SolutionOutlined,
+    label: '职位管理',
+    path: '/openings',
   },
 ]
 

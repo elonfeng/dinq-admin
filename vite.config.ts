@@ -12,7 +12,7 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0', // Allow external access
-    port: 3000,
+    port: 3001,
     proxy: {
       // /tool/* → dinq_tools (8081)
       '/tool': {
