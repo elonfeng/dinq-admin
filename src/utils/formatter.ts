@@ -60,9 +60,12 @@ export function formatRelativeTime(date: string | Date, locale: string = 'zh-CN'
       return locale === 'zh-CN' ? '刚刚' : 'just now'
     }
 
-    const suffix = isPast
-      ? (locale === 'zh-CN' ? '前' : ' ago')
-      : (locale === 'zh-CN' ? '后' : ' later')
+    // 如果时间在未来（比当前时间晚），显示"近期"
+    if (!isPast) {
+      return locale === 'zh-CN' ? '近期' : 'recently'
+    }
+
+    const suffix = locale === 'zh-CN' ? '前' : ' ago'
 
     if (diffSec < 60) {
       return locale === 'zh-CN' ? `${diffSec} 秒${suffix}` : `${diffSec} seconds${suffix}`

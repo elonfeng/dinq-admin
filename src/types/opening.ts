@@ -18,6 +18,7 @@ export interface Opening {
   email?: string
   author_avatar?: string
   author_name?: string
+  user_url?: string
   update_time?: string
   source?: 'linkedin' | 'twitter' | string
   source_url?: string
@@ -67,6 +68,7 @@ export interface CreateOpeningRequest {
   email?: string
   author_avatar?: string
   author_name?: string
+  user_url?: string
   source?: string
   source_url?: string
   type: 'graduate' | 'internship'
@@ -82,6 +84,7 @@ export interface UpdateOpeningRequest {
   email?: string
   author_avatar?: string
   author_name?: string
+  user_url?: string
   source?: string
   source_url?: string
   type?: 'graduate' | 'internship'

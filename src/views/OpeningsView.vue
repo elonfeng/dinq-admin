@@ -11,8 +11,10 @@ import {
   EnvironmentOutlined,
   ClockCircleOutlined,
   TeamOutlined,
+  UploadOutlined,
 } from '@ant-design/icons-vue'
 import { openingService } from '@/services/openingService'
+import { uploadService } from '@/services/uploadService'
 import type {
   Opening,
   OpeningTag,
@@ -65,6 +67,7 @@ const formData = ref<CreateOpeningRequest>({
   email: '',
   author_avatar: '',
   author_name: '',
+  user_url: '',
   source: '',
   source_url: '',
   type: 'internship',
@@ -102,9 +105,46 @@ const opportunityTypeOptions = [
   { value: 'internships', label: 'Internships' },
 ]
 
+// 来源平台选项
+const sourcePlatformOptions = [
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'x', label: 'X' },
+  { value: 'github', label: 'GitHub' },
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'redbook', label: 'RedBook' },
+  { value: 'reddit', label: 'Reddit' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'other', label: 'Other' },
+]
+
+// 来源平台图标映射
+const sourceIconMap: Record<string, string> = {
+  linkedin: '/LinkedInIcon.svg',
+  x: '/XIcon.svg',
+  github: '/GithubIcon.svg',
+  redbook: '/redbookIcon.svg',
+  facebook: '/facebookIcon.svg',
+  reddit: '/redditIcon.svg',
+}
+
+function getSourceIcon(source: string | undefined): string | null {
+  if (!source) return null
+  return sourceIconMap[source.toLowerCase()] || null
+}
+
 // 详情弹窗
 const detailModalOpen = ref(false)
 const detailOpening = ref<Opening | null>(null)
+
+// 图标上传状态
+const iconUploading = ref(false)
+const iconIsUploaded = ref(false) // 标记是否通过上传获得的URL
+const iconFileInput = ref<HTMLInputElement | null>(null)
+
+// 头像上传状态
+const avatarUploading = ref(false)
+const avatarIsUploaded = ref(false)
+const avatarFileInput = ref<HTMLInputElement | null>(null)
 
 const typeTagMap = {
   graduate: { color: 'green', label: '全职/研究生' },
@@ -210,6 +250,7 @@ function openCreateModal() {
     email: '',
     author_avatar: '',
     author_name: '',
+    user_url: '',
     source: '',
     source_url: '',
     type: 'internship',
@@ -219,6 +260,9 @@ function openCreateModal() {
   fundingRound.value = ''
   fields.value = []
   fieldInputValue.value = ''
+  // 重置图标上传状态
+  iconIsUploaded.value = false
+  avatarIsUploaded.value = false
   currentOpening.value = null
   modalOpen.value = true
 }
@@ -236,6 +280,7 @@ function openEditModal(record: Opening) {
     email: record.email || '',
     author_avatar: record.author_avatar || '',
     author_name: record.author_name || '',
+    user_url: record.user_url || '',
     source: record.source || '',
     source_url: record.source_url || '',
     type: record.type,
@@ -243,6 +288,9 @@ function openEditModal(record: Opening) {
   // 解析已有标签到表单状态
   parseTagsToForm(record.tags)
   fieldInputValue.value = ''
+  // 如果有图标URL，标记为已上传状态（不可编辑，只能清空）
+  iconIsUploaded.value = !!record.company_icon
+  avatarIsUploaded.value = !!record.author_avatar
   modalOpen.value = true
 }
 
@@ -305,6 +353,10 @@ function confirmDelete(record: Opening) {
 function addField() {
   const value = fieldInputValue.value.trim()
   if (!value) return
+  if (fields.value.length >= 3) {
+    message.warning('最多添加 3 个领域标签，请先删除再添加')
+    return
+  }
   if (fields.value.includes(value)) {
     message.warning('该领域已添加')
     return
@@ -378,6 +430,98 @@ function getTagColor(type: string) {
     default:
       return 'default'
   }
+}
+
+// 触发文件选择
+function triggerIconUpload() {
+  iconFileInput.value?.click()
+}
+
+// 处理图标上传
+async function handleIconUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  // 验证文件类型 (仅支持 png, jpg, webp)
+  const allowedTypes = ['image/png', 'image/jpeg', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    message.error('仅支持 PNG、JPG、WebP 格式的图片')
+    return
+  }
+
+  // 验证文件大小 (最大 2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    message.error('图片大小不能超过 2MB')
+    return
+  }
+
+  iconUploading.value = true
+  try {
+    const url = await uploadService.uploadFile(file)
+    formData.value.company_icon = url
+    iconIsUploaded.value = true
+    message.success('图标上传成功')
+  } catch (error) {
+    console.error(error)
+    message.error('图标上传失败')
+  } finally {
+    iconUploading.value = false
+    // 清空 input 以便重复选择同一文件
+    input.value = ''
+  }
+}
+
+// 清空图标
+function clearIcon() {
+  formData.value.company_icon = ''
+  iconIsUploaded.value = false
+}
+
+// 触发头像文件选择
+function triggerAvatarUpload() {
+  avatarFileInput.value?.click()
+}
+
+// 处理头像上传
+async function handleAvatarUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  // 验证文件类型 (仅支持 png, jpg, webp)
+  const allowedTypes = ['image/png', 'image/jpeg', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    message.error('仅支持 PNG、JPG、WebP 格式的图片')
+    return
+  }
+
+  // 验证文件大小 (最大 2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    message.error('图片大小不能超过 2MB')
+    return
+  }
+
+  avatarUploading.value = true
+  try {
+    const url = await uploadService.uploadFile(file)
+    formData.value.author_avatar = url
+    avatarIsUploaded.value = true
+    message.success('头像上传成功')
+  } catch (error) {
+    console.error(error)
+    message.error('头像上传失败')
+  } finally {
+    avatarUploading.value = false
+    // 清空 input 以便重复选择同一文件
+    input.value = ''
+  }
+}
+
+// 清空头像
+function clearAvatar() {
+  formData.value.author_avatar = ''
+  avatarIsUploaded.value = false
 }
 
 watch([typeFilter, timeRangeFilter, locationFilter], () => {
@@ -561,10 +705,23 @@ onMounted(() => {
               rel="noopener noreferrer"
               class="source-link"
             >
-              <LinkOutlined />
-              {{ record.source || '链接' }}
+              <img
+                v-if="getSourceIcon(record.source)"
+                :src="getSourceIcon(record.source) || ''"
+                :alt="record.source"
+                class="source-icon"
+              />
+              <LinkOutlined v-else />
             </a>
-            <span v-else>{{ record.source || '-' }}</span>
+            <template v-else>
+              <img
+                v-if="getSourceIcon(record.source)"
+                :src="getSourceIcon(record.source) || ''"
+                :alt="record.source"
+                class="source-icon"
+              />
+              <span v-else>{{ record.source || '-' }}</span>
+            </template>
           </template>
           <template v-else-if="column.key === 'update_time'">
             <div class="time-cell">
@@ -613,14 +770,52 @@ onMounted(() => {
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item label="公司名称" required>
-              <a-input v-model:value="formData.company" placeholder="如：OpenAI" />
+            <a-form-item label="工作地点" required>
+              <a-input v-model:value="formData.location" placeholder="如：USA, Remote" />
             </a-form-item>
           </a-col>
         </a-row>
 
-        <a-form-item label="工作地点" required>
-          <a-input v-model:value="formData.location" placeholder="如：USA, Remote" />
+        <a-row :gutter="16">
+          <a-col :span="12">
+            <a-form-item label="公司名称" required>
+              <a-input v-model:value="formData.company" placeholder="如：OpenAI" />
+            </a-form-item>
+          </a-col>
+          <a-col :span="12">
+            <a-form-item label="投递邮箱">
+              <a-input v-model:value="formData.email" placeholder="jobs@company.com" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+
+        <a-form-item label="公司图标 URL">
+          <div class="icon-upload-wrapper">
+            <a-input
+              v-model:value="formData.company_icon"
+              placeholder="https://..."
+              :disabled="iconIsUploaded"
+              :allow-clear="iconIsUploaded"
+              @clear="clearIcon"
+            />
+            <a-button
+              type="primary"
+              :loading="iconUploading"
+              @click="triggerIconUpload"
+            >
+              <template #icon>
+                <UploadOutlined />
+              </template>
+              上传
+            </a-button>
+            <input
+              ref="iconFileInput"
+              type="file"
+              accept=".png,.jpg,.jpeg,.webp"
+              style="display: none"
+              @change="handleIconUpload"
+            />
+          </div>
         </a-form-item>
 
         <a-form-item label="职位描述">
@@ -633,21 +828,21 @@ onMounted(() => {
 
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item label="公司图标 URL">
-              <a-input v-model:value="formData.company_icon" placeholder="https://..." />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="投递邮箱">
-              <a-input v-model:value="formData.email" placeholder="jobs@company.com" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-
-        <a-row :gutter="16">
-          <a-col :span="12">
             <a-form-item label="来源平台">
-              <a-input v-model:value="formData.source" placeholder="如：linkedin, twitter" />
+              <a-select
+                v-model:value="formData.source"
+                placeholder="请选择来源平台"
+                style="width: 100%"
+                allow-clear
+              >
+                <a-select-option
+                  v-for="opt in sourcePlatformOptions"
+                  :key="opt.value"
+                  :value="opt.value === 'other' ? '' : opt.value"
+                >
+                  {{ opt.label }}
+                </a-select-option>
+              </a-select>
             </a-form-item>
           </a-col>
           <a-col :span="12">
@@ -664,11 +859,40 @@ onMounted(() => {
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item label="发布者头像 URL">
-              <a-input v-model:value="formData.author_avatar" placeholder="https://..." />
+            <a-form-item label="用户主页 URL">
+              <a-input v-model:value="formData.user_url" placeholder="https://..." />
             </a-form-item>
           </a-col>
         </a-row>
+
+        <a-form-item label="发布者头像 URL">
+          <div class="icon-upload-wrapper">
+            <a-input
+              v-model:value="formData.author_avatar"
+              placeholder="https://..."
+              :disabled="avatarIsUploaded"
+              :allow-clear="avatarIsUploaded"
+              @clear="clearAvatar"
+            />
+            <a-button
+              type="primary"
+              :loading="avatarUploading"
+              @click="triggerAvatarUpload"
+            >
+              <template #icon>
+                <UploadOutlined />
+              </template>
+              上传
+            </a-button>
+            <input
+              ref="avatarFileInput"
+              type="file"
+              accept=".png,.jpg,.jpeg,.webp"
+              style="display: none"
+              @change="handleAvatarUpload"
+            />
+          </div>
+        </a-form-item>
 
         <a-divider orientation="left" style="margin: 16px 0 8px">标签设置</a-divider>
 
@@ -978,6 +1202,12 @@ onMounted(() => {
   gap: 4px;
 }
 
+.source-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
 .time-cell {
   display: flex;
   align-items: flex-start;
@@ -1089,5 +1319,16 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.icon-upload-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-upload-wrapper .ant-input-affix-wrapper,
+.icon-upload-wrapper .ant-input {
+  flex: 1;
 }
 </style>
