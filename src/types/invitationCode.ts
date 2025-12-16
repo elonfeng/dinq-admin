@@ -30,6 +30,8 @@ export interface InvitationCodeListRequest {
   page?: number
   limit?: number
   source?: string
+  type?: InvitationCodeType
+  notes?: string
   batchId?: string
 }
 
@@ -43,6 +45,7 @@ export interface InvitationCodeListResponse {
 
 export interface BatchGenerateRequest {
   count: number
+  code?: string
   source: string
   type?: InvitationCodeType
   expiresInDay?: number

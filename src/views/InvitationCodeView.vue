@@ -10,6 +10,8 @@ import {
   UserOutlined,
   StopOutlined,
   CheckCircleOutlined,
+  DeleteOutlined,
+  EditOutlined,
 } from '@ant-design/icons-vue'
 import { invitationCodeService } from '@/services/invitationCodeService'
 import type {
@@ -33,6 +35,8 @@ const pagination = ref({
 
 const searchCode = ref('')
 const sourceFilter = ref('')
+const typeFilter = ref<InvitationCodeType | ''>('')
+const notesFilter = ref('')
 
 const typeTagMap: Record<InvitationCodeType, { color: string; label: string }> = {
   single: { color: 'blue', label: '单次使用' },
@@ -50,9 +54,10 @@ const columns = [
   { title: '来源', dataIndex: 'source', key: 'source', width: 120 },
   { title: '状态', dataIndex: 'status', key: 'status', width: 100 },
   { title: '使用次数', dataIndex: 'usedCount', key: 'usedCount', width: 100 },
+  { title: '备注', dataIndex: 'notes', key: 'notes', width: 160, ellipsis: true },
   { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180 },
   { title: '过期时间', dataIndex: 'expiresAt', key: 'expiresAt', width: 140 },
-  { title: '操作', key: 'actions', width: 200 },
+  { title: '操作', key: 'actions', width: 260 },
 ]
 
 const getDisplayStatus = (code: InvitationCodeWithUsage) => {
@@ -84,12 +89,21 @@ const statusCounters = computed(() => {
   )
 })
 
+// 有效期选项
+const expiresOptions = [
+  { value: 30, label: '30 天' },
+  { value: 90, label: '90 天' },
+  { value: 180, label: '180 天' },
+  { value: 0, label: '永不过期' },
+]
+
 // 批量生成弹窗
 const generateModalOpen = ref(false)
 const generating = ref(false)
 const generateForm = ref<BatchGenerateRequest>({
-  count: 10,
-  source: 'admin',
+  count: 1,
+  code: '',
+  source: '',
   type: 'single',
   expiresInDay: 30,
   notes: '',
@@ -109,6 +123,16 @@ const codeUsersCount = ref(0)
 // 状态更新 loading
 const statusUpdating = ref<string | null>(null)
 
+// 删除相关
+const deleteConfirmOpen = ref(false)
+const deleting = ref(false)
+const codeToDelete = ref<string | null>(null)
+
+// 编辑备注相关
+const editNotesModalOpen = ref(false)
+const editingNotes = ref(false)
+const editNotesForm = ref({ code: '', notes: '' })
+
 async function fetchCodes() {
   loading.value = true
   try {
@@ -116,6 +140,8 @@ async function fetchCodes() {
       page: pagination.value.current,
       limit: pagination.value.pageSize,
       source: sourceFilter.value || undefined,
+      type: typeFilter.value || undefined,
+      notes: notesFilter.value || undefined,
     })
     codes.value = result.codes
     total.value = result.total
@@ -175,8 +201,9 @@ async function copyAllGeneratedCodes() {
 
 function openGenerateModal() {
   generateForm.value = {
-    count: 10,
-    source: 'admin',
+    count: 1,
+    code: '',
+    source: '',
     type: 'single',
     expiresInDay: 30,
     notes: '',
@@ -187,10 +214,6 @@ function openGenerateModal() {
 async function submitGenerate() {
   if (generateForm.value.count <= 0 || generateForm.value.count > 1000) {
     message.error('数量必须在 1-1000 之间')
-    return
-  }
-  if (!generateForm.value.source) {
-    message.error('请填写来源')
     return
   }
 
@@ -276,7 +299,57 @@ async function openUsersModal(code: string) {
   }
 }
 
-watch(sourceFilter, () => {
+function openDeleteConfirm(code: string) {
+  codeToDelete.value = code
+  deleteConfirmOpen.value = true
+}
+
+async function confirmDelete() {
+  if (!codeToDelete.value) return
+
+  deleting.value = true
+  try {
+    await invitationCodeService.delete(codeToDelete.value)
+    message.success('邀请码已删除')
+    deleteConfirmOpen.value = false
+    codeToDelete.value = null
+    await fetchCodes()
+  } catch (error) {
+    console.error(error)
+    message.error('删除失败')
+  } finally {
+    deleting.value = false
+  }
+}
+
+function openEditNotesModal(record: InvitationCodeWithUsage) {
+  editNotesForm.value = {
+    code: record.code,
+    notes: record.notes || '',
+  }
+  editNotesModalOpen.value = true
+}
+
+async function submitEditNotes() {
+  editingNotes.value = true
+  try {
+    await invitationCodeService.updateNotes(editNotesForm.value.code, editNotesForm.value.notes)
+    message.success('备注已更新')
+    editNotesModalOpen.value = false
+    // 更新本地数据
+    const target = codes.value.find((c) => c.code === editNotesForm.value.code)
+    if (target) {
+      target.notes = editNotesForm.value.notes
+    }
+  } catch (error) {
+    console.error(error)
+    message.error('更新备注失败')
+  } finally {
+    editingNotes.value = false
+  }
+}
+
+watch([sourceFilter, typeFilter, notesFilter], () => {
   pagination.value.current = 1
   fetchCodes()
 })
@@ -342,7 +415,7 @@ onMounted(() => {
           <a-input-search
             v-model:value="searchCode"
             placeholder="搜索邀请码"
-            style="width: 240px"
+            style="width: 200px"
             allow-clear
             @search="handleSearch"
           >
@@ -350,10 +423,25 @@ onMounted(() => {
               <SearchOutlined />
             </template>
           </a-input-search>
+          <a-select
+            v-model:value="typeFilter"
+            placeholder="类型"
+            style="width: 120px"
+            allow-clear
+          >
+            <a-select-option value="single">单次</a-select-option>
+            <a-select-option value="multi">重复</a-select-option>
+          </a-select>
           <a-input
             v-model:value="sourceFilter"
-            placeholder="按来源筛选"
-            style="width: 160px"
+            placeholder="来源"
+            style="width: 120px"
+            allow-clear
+          />
+          <a-input
+            v-model:value="notesFilter"
+            placeholder="备注"
+            style="width: 140px"
             allow-clear
           />
         </a-space>
@@ -409,6 +497,12 @@ onMounted(() => {
               {{ record.usedCount || 0 }} 人
             </a-button>
           </template>
+          <template v-else-if="column.key === 'notes'">
+            <span v-if="record.notes" class="notes-cell" :title="record.notes">
+              {{ record.notes }}
+            </span>
+            <span v-else class="no-notes">-</span>
+          </template>
           <template v-else-if="column.key === 'createdAt'">
             <div class="time-cell">
               <div class="primary">{{ formatDateTime(record.createdAt) }}</div>
@@ -428,6 +522,12 @@ onMounted(() => {
               <a-button type="link" size="small" @click="copyCode(record.code)">
                 复制
               </a-button>
+              <a-button type="link" size="small" @click="openEditNotesModal(record)">
+                <template #icon>
+                  <EditOutlined />
+                </template>
+                备注
+              </a-button>
               <a-button
                 type="link"
                 size="small"
@@ -440,6 +540,12 @@ onMounted(() => {
                   <CheckCircleOutlined v-else />
                 </template>
                 {{ record.status === 'active' ? '禁用' : '启用' }}
+              </a-button>
+              <a-button type="link" size="small" danger @click="openDeleteConfirm(record.code)">
+                <template #icon>
+                  <DeleteOutlined />
+                </template>
+                删除
               </a-button>
             </a-space>
           </template>
@@ -466,23 +572,34 @@ onMounted(() => {
           />
           <div class="form-hint">最多一次生成 1000 个</div>
         </a-form-item>
-        <a-form-item label="来源标识" required>
-          <a-input v-model:value="generateForm.source" placeholder="如：admin、kol_xxx、waitinglist" />
+        <a-form-item v-if="generateForm.count === 1" label="自定义邀请码">
+          <a-input
+            v-model:value="generateForm.code"
+            placeholder="留空则自动生成"
+            style="text-transform: uppercase"
+          />
+          <div class="form-hint">可选，自定义邀请码会自动转为大写</div>
+        </a-form-item>
+        <a-form-item label="来源标识">
+          <a-input v-model:value="generateForm.source" placeholder="如：kol_xxx、waitinglist（可选）" />
           <div class="form-hint">用于标识邀请码来源，如 KOL 名称</div>
         </a-form-item>
         <a-form-item label="类型">
           <a-radio-group v-model:value="generateForm.type">
-            <a-radio value="single">单次使用（waitinglist 用户）</a-radio>
-            <a-radio value="multi">多次使用（KOL 专属）</a-radio>
+            <a-radio value="single">单次（默认）</a-radio>
+            <a-radio value="multi">重复</a-radio>
           </a-radio-group>
         </a-form-item>
-        <a-form-item label="有效期（天）">
-          <a-input-number
-            v-model:value="generateForm.expiresInDay"
-            :min="0"
-            style="width: 100%"
-            placeholder="0 表示永不过期"
-          />
+        <a-form-item label="有效期">
+          <a-select v-model:value="generateForm.expiresInDay" style="width: 100%">
+            <a-select-option
+              v-for="opt in expiresOptions"
+              :key="opt.value"
+              :value="opt.value"
+            >
+              {{ opt.label }}
+            </a-select-option>
+          </a-select>
         </a-form-item>
         <a-form-item label="备注">
           <a-textarea v-model:value="generateForm.notes" :rows="2" placeholder="可选备注信息" />
@@ -552,6 +669,43 @@ onMounted(() => {
           </a-table>
         </div>
       </a-spin>
+    </a-modal>
+
+    <!-- 删除确认弹窗 -->
+    <a-modal
+      v-model:open="deleteConfirmOpen"
+      title="删除邀请码"
+      :confirm-loading="deleting"
+      ok-text="删除"
+      ok-type="danger"
+      cancel-text="取消"
+      @ok="confirmDelete"
+    >
+      <p>确定要删除邀请码 <code>{{ codeToDelete }}</code> 吗？</p>
+      <p class="delete-warning">此操作不可恢复！</p>
+    </a-modal>
+
+    <!-- 编辑备注弹窗 -->
+    <a-modal
+      v-model:open="editNotesModalOpen"
+      title="编辑备注"
+      :confirm-loading="editingNotes"
+      ok-text="保存"
+      cancel-text="取消"
+      @ok="submitEditNotes"
+    >
+      <a-form layout="vertical">
+        <a-form-item label="邀请码">
+          <code class="invite-code">{{ editNotesForm.code }}</code>
+        </a-form-item>
+        <a-form-item label="备注">
+          <a-textarea
+            v-model:value="editNotesForm.notes"
+            :rows="3"
+            placeholder="请输入备注信息"
+          />
+        </a-form-item>
+      </a-form>
     </a-modal>
   </div>
 </template>
@@ -664,6 +818,21 @@ onMounted(() => {
 
 .no-expire {
   color: #8c8c8c;
+}
+
+.notes-cell {
+  color: #595959;
+  font-size: 13px;
+}
+
+.no-notes {
+  color: #bfbfbf;
+}
+
+.delete-warning {
+  color: #ff4d4f;
+  font-size: 13px;
+  margin-top: 8px;
 }
 
 .form-hint {

@@ -52,6 +52,8 @@ export const invitationCodeService = {
         page: params?.page || 1,
         limit: params?.limit || 20,
         source: params?.source || undefined,
+        type: params?.type || undefined,
+        notes: params?.notes || undefined,
         batch_id: params?.batchId || undefined,
       },
     })
@@ -79,9 +81,10 @@ export const invitationCodeService = {
   async batchGenerate(req: BatchGenerateRequest): Promise<BatchGenerateResponse> {
     const response = await apiClient.post('/invitation-codes/generate', {
       count: req.count,
-      source: req.source,
+      code: req.code || undefined,
+      source: req.source || undefined,
       type: req.type || 'single',
-      expires_in_day: req.expiresInDay,
+      expires_in_days: req.expiresInDay,
       notes: req.notes,
     })
 
@@ -173,5 +176,22 @@ export const invitationCodeService = {
       code: payload.code || code,
       usedCount: payload.used_count || payload.usedCount || 0,
     }
+  },
+
+  /**
+   * 删除邀请码
+   */
+  async delete(code: string): Promise<void> {
+    await apiClient.delete(`/invitation-codes/${code}`)
+  },
+
+  /**
+   * 更新邀请码备注
+   */
+  async updateNotes(code: string, notes: string): Promise<void> {
+    await apiClient.post('/invitation-codes/update-notes', {
+      code,
+      notes,
+    })
   },
 }
