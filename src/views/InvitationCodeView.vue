@@ -459,6 +459,7 @@ onMounted(() => {
           pageSizeOptions: ['10', '20', '50', '100'],
           showTotal: (t: number) => `共 ${t} 条`,
         }"
+        :scroll="{ x: 1200 }"
         row-key="id"
         @change="handleTableChange"
       >

@@ -300,6 +300,10 @@ function openDetailModal(record: Opening) {
 }
 
 async function submitForm() {
+  if (!opportunityType.value) {
+    message.error('请选择类型')
+    return
+  }
   if (!formData.value.position || !formData.value.company || !formData.value.location) {
     message.error('请填写必填字段：职位、公司、地点')
     return
@@ -762,40 +766,59 @@ onMounted(() => {
       cancel-text="取消"
       @ok="submitForm"
     >
-      <a-form layout="vertical" class="opening-form">
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="职位名称" required>
-              <a-input v-model:value="formData.position" placeholder="如：ML Research Intern" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="工作地点" required>
-              <a-input v-model:value="formData.location" placeholder="如：USA, Remote" />
-            </a-form-item>
-          </a-col>
-        </a-row>
+      <a-form
+        layout="horizontal"
+        :label-col="{ span: 5 }"
+        :wrapper-col="{ span: 19 }"
+        class="opening-form"
+      >
+        <!-- 类型（单选） -->
+        <a-form-item label="类型" required>
+          <a-radio-group v-model:value="opportunityType">
+            <a-radio
+              v-for="opt in opportunityTypeOptions"
+              :key="opt.value"
+              :value="opt.value"
+            >
+              {{ opt.label }}
+            </a-radio>
+          </a-radio-group>
+        </a-form-item>
 
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="公司名称" required>
-              <a-input v-model:value="formData.company" placeholder="如：OpenAI" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="投递邮箱">
-              <a-input v-model:value="formData.email" placeholder="jobs@company.com" />
-            </a-form-item>
-          </a-col>
-        </a-row>
+        <!-- 职位名称 -->
+        <a-form-item label="职位名称" required>
+          <a-input v-model:value="formData.position" placeholder="如：ML Research Intern" />
+        </a-form-item>
 
-        <a-form-item label="公司图标 URL">
+        <!-- 工作地点 -->
+        <a-form-item label="工作地点" required>
+          <a-input v-model:value="formData.location" placeholder="如：USA, Remote" />
+        </a-form-item>
+
+        <!-- 职位描述 -->
+        <a-form-item label="职位描述" required>
+          <a-textarea
+            v-model:value="formData.description"
+            :rows="4"
+            placeholder="职位描述信息..."
+          />
+        </a-form-item>
+
+        <!-- 投递邮箱 -->
+        <a-form-item label="投递邮箱" required>
+          <a-input v-model:value="formData.email" placeholder="jobs@company.com" />
+        </a-form-item>
+
+        <a-divider style="margin: 16px 0" />
+
+        <!-- 公司/机构 Logo -->
+        <a-form-item label="公司/机构 Logo">
           <div class="icon-upload-wrapper">
             <a-input
               v-model:value="formData.company_icon"
               placeholder="https://..."
-              :disabled="iconIsUploaded"
-              :allow-clear="iconIsUploaded"
+              :readonly="iconIsUploaded"
+              allow-clear
               @clear="clearIcon"
             />
             <a-button
@@ -818,60 +841,51 @@ onMounted(() => {
           </div>
         </a-form-item>
 
-        <a-form-item label="职位描述">
-          <a-textarea
-            v-model:value="formData.description"
-            :rows="4"
-            placeholder="职位描述信息..."
-          />
+        <!-- 公司/机构名称 -->
+        <a-form-item label="公司/机构名称" required>
+          <a-input v-model:value="formData.company" placeholder="如：OpenAI" />
         </a-form-item>
 
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="来源平台">
-              <a-select
-                v-model:value="formData.source"
-                placeholder="请选择来源平台"
-                style="width: 100%"
-                allow-clear
-              >
-                <a-select-option
-                  v-for="opt in sourcePlatformOptions"
-                  :key="opt.value"
-                  :value="opt.value === 'other' ? '' : opt.value"
-                >
-                  {{ opt.label }}
-                </a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="来源链接">
-              <a-input v-model:value="formData.source_url" placeholder="https://..." />
-            </a-form-item>
-          </a-col>
-        </a-row>
+        <a-divider style="margin: 16px 0" />
 
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="发布者名称">
-              <a-input v-model:value="formData.author_name" placeholder="发布者名称" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="用户主页 URL">
-              <a-input v-model:value="formData.user_url" placeholder="https://..." />
-            </a-form-item>
-          </a-col>
-        </a-row>
+        <!-- 来源平台 -->
+        <a-form-item label="来源平台">
+          <a-select
+            v-model:value="formData.source"
+            placeholder="请选择来源平台"
+            style="width: 100%"
+            allow-clear
+          >
+            <a-select-option
+              v-for="opt in sourcePlatformOptions"
+              :key="opt.value"
+              :value="opt.value === 'other' ? '' : opt.value"
+            >
+              {{ opt.label }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
 
-        <a-form-item label="发布者头像 URL">
+        <!-- 来源 URL -->
+        <a-form-item label="来源 URL" required>
+          <a-input v-model:value="formData.source_url" placeholder="https://..." />
+        </a-form-item>
+
+        <a-divider style="margin: 16px 0" />
+
+        <!-- 发布者名称 -->
+        <a-form-item label="发布者名称">
+          <a-input v-model:value="formData.author_name" placeholder="发布者名称" />
+        </a-form-item>
+
+        <!-- 发布者头像 -->
+        <a-form-item label="发布者头像" required>
           <div class="icon-upload-wrapper">
             <a-input
               v-model:value="formData.author_avatar"
               placeholder="https://..."
-              :disabled="avatarIsUploaded"
-              :allow-clear="avatarIsUploaded"
+              :readonly="avatarIsUploaded"
+              allow-clear
               @clear="clearAvatar"
             />
             <a-button
@@ -894,43 +908,33 @@ onMounted(() => {
           </div>
         </a-form-item>
 
-        <a-divider orientation="left" style="margin: 16px 0 8px">标签设置</a-divider>
+        <!-- 发布者 URL -->
+        <a-form-item label="发布者 URL">
+          <a-input v-model:value="formData.user_url" placeholder="https://..." />
+        </a-form-item>
 
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="机会类型">
-              <a-radio-group v-model:value="opportunityType">
-                <a-radio
-                  v-for="opt in opportunityTypeOptions"
-                  :key="opt.value"
-                  :value="opt.value"
-                >
-                  {{ opt.label }}
-                </a-radio>
-              </a-radio-group>
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="企业融资轮次">
-              <a-select
-                v-model:value="fundingRound"
-                placeholder="请选择融资轮次"
-                style="width: 100%"
-                allow-clear
-              >
-                <a-select-option
-                  v-for="opt in fundingRoundOptions"
-                  :key="opt.value"
-                  :value="opt.value"
-                >
-                  {{ opt.label }}
-                </a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-        </a-row>
+        <a-divider style="margin: 16px 0" />
 
-        <a-form-item label="领域/方向">
+        <!-- 融资（单选） -->
+        <a-form-item label="融资">
+          <a-select
+            v-model:value="fundingRound"
+            placeholder="请选择融资轮次"
+            style="width: 100%"
+            allow-clear
+          >
+            <a-select-option
+              v-for="opt in fundingRoundOptions"
+              :key="opt.value"
+              :value="opt.value"
+            >
+              {{ opt.label }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+
+        <!-- 领域/方向 -->
+        <a-form-item label="领域/方向" required>
           <div class="fields-editor">
             <div class="current-fields">
               <a-tag
