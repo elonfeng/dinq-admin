@@ -55,30 +55,33 @@ class NotificationService {
     offset = 0,
     search = ''
   ): Promise<{ users: User[]; total: number }> {
-    const response = await apiClient.get<{ users: User[]; total: number }>('/admin/users', {
+    const response = await apiClient.get('/admin/users', {
       params: { limit, offset, search },
     })
-    return response.data
+    const payload = response.data?.data || response.data // 兼容 {code, data, message} 格式
+    return {
+      users: payload?.users || [],
+      total: payload?.total || 0,
+    }
   }
 
   /**
    * 获取通知模板列表
-   * GET /api/admin/notification-templates → Gateway → Message
+   * GET /admin/notification-templates → Gateway → Message
    */
   async getNotificationTemplates(): Promise<NotificationTemplate[]> {
-    const response = await apiClient.get<{ templates: NotificationTemplate[] }>(
-      '/api/admin/notification-templates'
-    )
-    return response.data.templates
+    const response = await apiClient.get('/admin/notification-templates')
+    const payload = response.data?.data || response.data // 兼容 {code, data, message} 格式
+    return payload?.templates || []
   }
 
   /**
    * 批量发送通知
-   * POST /api/admin/notifications/batch-send → Gateway → Message
+   * POST /admin/notifications/batch-send → Gateway → Message
    */
   async batchSendNotification(req: BatchSendRequest): Promise<BatchSendResponse> {
     const response = await apiClient.post<BatchSendResponse>(
-      '/api/admin/notifications/batch-send',
+      '/admin/notifications/batch-send',
       req
     )
     return response.data
