@@ -312,6 +312,9 @@ async function submitForm() {
   // 构建标签数组
   formData.value.tags = buildTagsFromForm()
 
+  // 同步类型到 type 字段
+  formData.value.type = opportunityType.value === 'graduate_admission' ? 'graduate' : 'internship'
+
   submitting.value = true
   try {
     if (modalMode.value === 'create') {
