@@ -53,7 +53,7 @@ function normalizeRecord(raw: any): VerificationRecord | null {
 export const verificationService = {
   async getVerifications(params?: { status?: string }): Promise<PendingVerificationResult> {
     const response = await apiClient.get('/admin/verifications', { params })
-    const payload = response.data
+    const payload = response.data?.data || response.data // 兼容 {code, data, message} 格式
 
     const recordsSource = Array.isArray(payload)
       ? payload
