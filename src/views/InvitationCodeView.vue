@@ -181,9 +181,30 @@ function handleRefresh() {
   fetchCodes()
 }
 
+function fallbackCopy(text: string): boolean {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  document.body.appendChild(textarea)
+  textarea.select()
+  try {
+    document.execCommand('copy')
+    return true
+  } catch {
+    return false
+  } finally {
+    document.body.removeChild(textarea)
+  }
+}
+
 async function copyCode(code: string) {
   try {
-    await navigator.clipboard.writeText(code)
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(code)
+    } else if (!fallbackCopy(code)) {
+      throw new Error('Fallback copy failed')
+    }
     message.success('邀请码已复制')
   } catch {
     message.error('复制失败')
@@ -191,8 +212,13 @@ async function copyCode(code: string) {
 }
 
 async function copyAllGeneratedCodes() {
+  const text = generatedCodes.value.join('\n')
   try {
-    await navigator.clipboard.writeText(generatedCodes.value.join('\n'))
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text)
+    } else if (!fallbackCopy(text)) {
+      throw new Error('Fallback copy failed')
+    }
     message.success('所有邀请码已复制')
   } catch {
     message.error('复制失败')
