@@ -803,6 +803,8 @@ onMounted(() => {
           <a-textarea
             v-model:value="formData.description"
             :rows="4"
+            :maxlength="240"
+            show-count
             placeholder="职位描述信息..."
           />
         </a-form-item>
