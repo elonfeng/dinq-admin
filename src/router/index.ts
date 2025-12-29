@@ -92,6 +92,16 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
+    {
+      path: '/contact-requests',
+      name: 'contact-requests',
+      component: () => import('@/views/ContactRequestView.vue'),
+      meta: {
+        title: '联系请求',
+        icon: 'MessageOutlined',
+        requiresAuth: true,
+      },
+    },
   ],
 })
 

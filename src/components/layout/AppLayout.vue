@@ -12,6 +12,7 @@ import {
   MenuUnfoldOutlined,
   GiftOutlined,
   SolutionOutlined,
+  MessageOutlined,
 } from '@ant-design/icons-vue'
 import AppHeader from './AppHeader.vue'
 
@@ -62,6 +63,12 @@ const menuItems = [
     icon: SolutionOutlined,
     label: '职位管理',
     path: '/openings',
+  },
+  {
+    key: 'contact-requests',
+    icon: MessageOutlined,
+    label: '联系请求',
+    path: '/contact-requests',
   },
 ]
 
