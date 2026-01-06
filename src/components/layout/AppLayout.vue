@@ -74,7 +74,7 @@ const menuItems = [
   {
     key: 'user-management',
     icon: UserOutlined,
-    label: '用户管理',
+    label: '积分管理',
     path: '/user-management',
   },
 ]

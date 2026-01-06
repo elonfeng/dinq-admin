@@ -20,6 +20,8 @@ const searching = ref(false)
 
 // 用户信息
 const currentUser = ref<AdminUserInfo | null>(null)
+const searchResults = ref<AdminUserInfo[]>([])
+const showUserSelect = ref(false)
 
 // 套餐列表
 const plans = ref<PlanInfo[]>([])
@@ -68,21 +70,38 @@ const handleSearch = async (type: 'email' | 'domain') => {
 
   searching.value = true
   currentUser.value = null
+  searchResults.value = []
+  showUserSelect.value = false
 
   try {
     const params = type === 'email' ? { email: value } : { domain: value }
-    const user = await userManagementService.searchUser(params)
-    if (user) {
-      currentUser.value = user
-      selectedPlan.value = user.plan || user.tier || 'free'
-    } else {
+    const result = await userManagementService.searchUser(params)
+
+    if (result.count === 0) {
       message.warning('未找到用户')
+    } else if (result.count === 1) {
+      // 只有一个结果，直接显示
+      currentUser.value = result.users[0]
+      selectedPlan.value = currentUser.value.plan || currentUser.value.tier || 'free'
+    } else {
+      // 多个结果，让用户选择
+      searchResults.value = result.users
+      showUserSelect.value = true
+      message.info(result.message || '找到多个用户，请选择')
     }
   } catch (e: any) {
     message.error(e.response?.data?.error || '搜索失败')
   } finally {
     searching.value = false
   }
+}
+
+// 选择用户
+const selectUser = (user: AdminUserInfo) => {
+  currentUser.value = user
+  selectedPlan.value = user.plan || user.tier || 'free'
+  showUserSelect.value = false
+  searchResults.value = []
 }
 
 // 更新套餐
@@ -149,6 +168,8 @@ const clearSearch = () => {
   searchEmail.value = ''
   searchDomain.value = ''
   currentUser.value = null
+  searchResults.value = []
+  showUserSelect.value = false
   selectedPlan.value = ''
 }
 
@@ -175,7 +196,7 @@ onMounted(() => {
           <a-form-item label="邮箱搜索">
             <a-input-search
               v-model:value="searchEmail"
-              placeholder="输入用户邮箱"
+              placeholder="输入用户邮箱（支持 Google 邮箱）"
               enter-button="搜索"
               :loading="searching"
               @search="handleSearch('email')"
@@ -198,6 +219,33 @@ onMounted(() => {
           </a-form-item>
         </a-col>
       </a-row>
+    </a-card>
+
+    <!-- 多用户选择卡片 -->
+    <a-card v-if="showUserSelect" title="找到多个用户，请选择" class="select-card">
+      <a-list :data-source="searchResults" :grid="{ gutter: 16, column: 2 }">
+        <template #renderItem="{ item }">
+          <a-list-item>
+            <a-card hoverable @click="selectUser(item)">
+              <a-card-meta>
+                <template #title>
+                  {{ item.name || '未设置姓名' }}
+                  <a-tag v-if="item.domain" color="blue" style="margin-left: 8px">{{ item.domain }}</a-tag>
+                </template>
+                <template #description>
+                  <div>{{ item.email || '-' }}</div>
+                  <div style="margin-top: 4px">
+                    <a-tag :color="getPlanTagColor(item.plan || item.tier)">
+                      {{ PLAN_LABELS[item.plan || item.tier] || item.plan || item.tier || 'Free' }}
+                    </a-tag>
+                    <span style="margin-left: 8px">{{ item.credit_balance }} credits</span>
+                  </div>
+                </template>
+              </a-card-meta>
+            </a-card>
+          </a-list-item>
+        </template>
+      </a-list>
     </a-card>
 
     <!-- 用户信息卡片 -->
@@ -304,7 +352,7 @@ onMounted(() => {
     </a-card>
 
     <!-- 空状态 -->
-    <a-card v-else class="empty-card">
+    <a-card v-if="!currentUser && !showUserSelect" class="empty-card">
       <a-empty description="请在上方搜索用户">
         <template #image>
           <UserOutlined style="font-size: 64px; color: #d9d9d9" />
@@ -320,6 +368,10 @@ onMounted(() => {
 }
 
 .search-card {
+  margin-bottom: 24px;
+}
+
+.select-card {
   margin-bottom: 24px;
 }
 

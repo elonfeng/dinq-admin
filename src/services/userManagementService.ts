@@ -6,6 +6,7 @@ import apiClient from './api'
 import type {
   AdminUserInfo,
   SearchUserRequest,
+  SearchUserResponse,
   UpdatePlanRequest,
   AddCreditsRequest,
   PlanInfo,
@@ -13,11 +14,16 @@ import type {
 
 export const userManagementService = {
   /**
-   * 搜索用户
+   * 搜索用户（可能返回多个结果）
    */
-  async searchUser(params: SearchUserRequest): Promise<AdminUserInfo | null> {
+  async searchUser(params: SearchUserRequest): Promise<SearchUserResponse> {
     const response = await apiClient.get('/admin/users/search', { params })
-    return response.data?.data || response.data || null
+    const payload = response.data?.data || response.data || {}
+    return {
+      users: payload.users || [],
+      count: payload.count || 0,
+      message: payload.message,
+    }
   },
 
   /**

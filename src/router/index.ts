@@ -107,7 +107,7 @@ const router = createRouter({
       name: 'user-management',
       component: () => import('@/views/UserManagementView.vue'),
       meta: {
-        title: '用户管理',
+        title: '积分管理',
         icon: 'UserOutlined',
         requiresAuth: true,
       },

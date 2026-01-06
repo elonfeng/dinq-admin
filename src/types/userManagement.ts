@@ -21,6 +21,13 @@ export interface SearchUserRequest {
   domain?: string
 }
 
+// 搜索用户响应（可能有多个结果）
+export interface SearchUserResponse {
+  users: AdminUserInfo[]
+  count: number
+  message?: string
+}
+
 // 更新套餐请求
 export interface UpdatePlanRequest {
   user_id: string
