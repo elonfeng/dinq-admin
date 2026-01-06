@@ -90,7 +90,7 @@ const handleSearch = async (type: 'email' | 'domain') => {
       message.info(result.message || '找到多个用户，请选择')
     }
   } catch (e: any) {
-    message.error(e.response?.data?.error || '搜索失败')
+    message.error(e.response?.data?.message || e.response?.data?.error || '搜索失败')
   } finally {
     searching.value = false
   }
@@ -127,7 +127,7 @@ const handleUpdatePlan = () => {
         // 刷新用户信息
         await handleSearch(searchEmail.value ? 'email' : 'domain')
       } catch (e: any) {
-        message.error(e.response?.data?.error || '更新失败')
+        message.error(e.response?.data?.message || e.response?.data?.error || '更新失败')
       } finally {
         updating.value = false
       }
@@ -155,7 +155,7 @@ const handleAddCredits = () => {
         // 刷新用户信息
         await handleSearch(searchEmail.value ? 'email' : 'domain')
       } catch (e: any) {
-        message.error(e.response?.data?.error || '充值失败')
+        message.error(e.response?.data?.message || e.response?.data?.error || '充值失败')
       } finally {
         updating.value = false
       }
