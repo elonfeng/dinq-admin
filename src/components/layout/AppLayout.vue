@@ -79,10 +79,10 @@ const menuItems = [
     path: '/user-management',
   },
   {
-    key: 'tools',
+    key: 'custom_tool',
     icon: ToolOutlined,
     label: '工具箱',
-    path: '/tools',
+    path: '/custom_tool',
   },
 ]
 
