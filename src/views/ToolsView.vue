@@ -110,7 +110,7 @@ const handleUpload: UploadProps['customRequest'] = async (options) => {
       file_size: (file as File).size,
       content_type: (file as File).type,
     })
-    const { upload_url, file_key } = uploadUrlResponse.data?.data || uploadUrlResponse.data
+    const { upload_url, file_url } = uploadUrlResponse.data?.data || uploadUrlResponse.data
 
     // Step 2: Upload to OSS
     await fetch(upload_url, {
@@ -121,15 +121,10 @@ const handleUpload: UploadProps['customRequest'] = async (options) => {
       },
     })
 
-    // Step 3: Confirm upload
-    const confirmResponse = await apiClient.post('/upload/confirm', {
-      file_key,
-    })
-    const { url } = confirmResponse.data?.data || confirmResponse.data
-
-    uploadedUrls.value.unshift(url)
+    // Done - file_url is already the final URL
+    uploadedUrls.value.unshift(file_url)
     message.success('Upload successful')
-    onSuccess?.(url)
+    onSuccess?.(file_url)
   } catch (e: any) {
     message.error(e.response?.data?.error || 'Upload failed')
     onError?.(e)

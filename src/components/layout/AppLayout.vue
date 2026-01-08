@@ -69,13 +69,13 @@ const menuItems = [
   {
     key: 'contact-requests',
     icon: MessageOutlined,
-    label: '联系请求',
+    label: '请求演示',
     path: '/contact-requests',
   },
   {
     key: 'user-management',
     icon: UserOutlined,
-    label: '积分管理',
+    label: '用户管理',
     path: '/user-management',
   },
   {

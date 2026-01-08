@@ -97,7 +97,7 @@ const router = createRouter({
       name: 'contact-requests',
       component: () => import('@/views/ContactRequestView.vue'),
       meta: {
-        title: '联系请求',
+        title: '请求演示',
         icon: 'MessageOutlined',
         requiresAuth: true,
       },
@@ -107,7 +107,7 @@ const router = createRouter({
       name: 'user-management',
       component: () => import('@/views/UserManagementView.vue'),
       meta: {
-        title: '积分管理',
+        title: '用户管理',
         icon: 'UserOutlined',
         requiresAuth: true,
       },
