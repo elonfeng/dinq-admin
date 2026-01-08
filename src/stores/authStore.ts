@@ -24,7 +24,7 @@ export const useAuthStore = defineStore('auth', () => {
   // Actions
   async function login(credentials: LoginCredentials): Promise<boolean> {
     try {
-      // 调用后端登录接口
+      // 调用后端管理员登录接口（仅限白名单邮箱）
       const response = await apiClient.post<{
         code: number
         message: string
@@ -32,7 +32,7 @@ export const useAuthStore = defineStore('auth', () => {
           token: string
           user: { email: string; name: string }
         }
-      }>('/auth/login', {
+      }>('/admin/auth/login', {
         email: credentials.username, // 使用邮箱登录
         password: credentials.password,
       })
