@@ -113,8 +113,8 @@ const router = createRouter({
       },
     },
     {
-      path: '/tools',
-      name: 'tools',
+      path: '/custom_tool',
+      name: 'custom_tool',
       component: () => import('@/views/ToolsView.vue'),
       meta: {
         title: '工具箱',

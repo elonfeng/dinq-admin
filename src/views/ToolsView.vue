@@ -380,8 +380,9 @@ const addAlertEmail = () => {
   newAlertEmail.value = ''
 }
 
-const removeAlertEmail = (email: string) => {
-  alertConfig.value.alert_emails = alertConfig.value.alert_emails.filter((e) => e !== email)
+const removeAlertEmail = (email: string, e?: Event) => {
+  e?.preventDefault()
+  alertConfig.value.alert_emails = alertConfig.value.alert_emails.filter((item) => item !== email)
 }
 
 const updateServiceLimit = (service: string, limit: number) => {
@@ -616,7 +617,7 @@ onMounted(() => {
                       :key="email"
                       closable
                       color="blue"
-                      @close="removeAlertEmail(email)"
+                      @close="(e: Event) => removeAlertEmail(email, e)"
                     >
                       {{ email }}
                     </a-tag>
