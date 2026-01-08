@@ -14,6 +14,7 @@ import {
   SolutionOutlined,
   MessageOutlined,
   UserOutlined,
+  ToolOutlined,
 } from '@ant-design/icons-vue'
 import AppHeader from './AppHeader.vue'
 
@@ -76,6 +77,12 @@ const menuItems = [
     icon: UserOutlined,
     label: '积分管理',
     path: '/user-management',
+  },
+  {
+    key: 'tools',
+    icon: ToolOutlined,
+    label: '工具箱',
+    path: '/tools',
   },
 ]
 

@@ -112,6 +112,16 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
+    {
+      path: '/tools',
+      name: 'tools',
+      component: () => import('@/views/ToolsView.vue'),
+      meta: {
+        title: '工具箱',
+        icon: 'ToolOutlined',
+        requiresAuth: true,
+      },
+    },
   ],
 })
 
