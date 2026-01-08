@@ -106,7 +106,8 @@ const handleUpload: UploadProps['customRequest'] = async (options) => {
   try {
     // Step 1: Get upload URL
     const uploadUrlResponse = await apiClient.post('/upload/url', {
-      filename: (file as File).name,
+      file_name: (file as File).name,
+      file_size: (file as File).size,
       content_type: (file as File).type,
     })
     const { upload_url, file_key } = uploadUrlResponse.data?.data || uploadUrlResponse.data
