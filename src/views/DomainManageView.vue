@@ -38,10 +38,6 @@ const batchForm = ref({
 })
 const batchLoading = ref(false)
 
-// 默认域名弹窗
-const defaultsVisible = ref(false)
-const defaultDomains = ref<string[]>([])
-
 // 表格列
 const columns = [
   {
@@ -177,16 +173,6 @@ const handleDelete = (record: ReservedDomain) => {
   })
 }
 
-// 查看默认域名
-const showDefaults = async () => {
-  try {
-    defaultDomains.value = await domainService.getDefaults()
-    defaultsVisible.value = true
-  } catch (e) {
-    message.error('获取默认域名列表失败')
-  }
-}
-
 onMounted(() => {
   loadData()
 })
@@ -197,9 +183,6 @@ onMounted(() => {
     <a-page-header title="域名管理" sub-title="管理保留域名，防止用户申请敏感域名">
       <template #extra>
         <a-space>
-          <a-button @click="showDefaults">
-            查看默认禁用
-          </a-button>
           <a-button @click="batchVisible = true">
             批量添加
           </a-button>
@@ -314,24 +297,6 @@ onMounted(() => {
       </a-form>
     </a-modal>
 
-    <!-- 默认域名弹窗 -->
-    <a-modal
-      v-model:open="defaultsVisible"
-      title="默认禁用域名列表"
-      :footer="null"
-      width="600px"
-    >
-      <a-alert
-        type="info"
-        message="以下域名为系统内置禁用，无法通过管理后台修改"
-        style="margin-bottom: 16px"
-      />
-      <div class="default-domains">
-        <a-tag v-for="d in defaultDomains" :key="d" color="default">
-          {{ d }}
-        </a-tag>
-      </div>
-    </a-modal>
   </div>
 </template>
 
@@ -346,14 +311,5 @@ onMounted(() => {
 
 .table-card {
   margin-bottom: 24px;
-}
-
-.default-domains {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.default-domains .ant-tag {
-  margin: 4px;
 }
 </style>
