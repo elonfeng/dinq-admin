@@ -465,7 +465,7 @@ onMounted(() => {
           <span class="code-count">{{ item.user_count }} 人</span>
         </div>
       </div>
-      <a-empty v-else description="暂无使用数据" :image="null" />
+      <a-empty v-else description="暂无使用数据" :image-style="{ height: '40px' }" />
     </a-card>
 
     <a-card class="table-card" :loading="loading">
