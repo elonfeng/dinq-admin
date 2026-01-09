@@ -15,6 +15,8 @@ import {
   MessageOutlined,
   UserOutlined,
   ToolOutlined,
+  BarChartOutlined,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 import AppHeader from './AppHeader.vue'
 
@@ -77,6 +79,18 @@ const menuItems = [
     icon: UserOutlined,
     label: '用户管理',
     path: '/user-management',
+  },
+  {
+    key: 'user-stats',
+    icon: BarChartOutlined,
+    label: '用户统计',
+    path: '/user-stats',
+  },
+  {
+    key: 'query-analysis',
+    icon: SearchOutlined,
+    label: 'Query 分析',
+    path: '/query-analysis',
   },
   {
     key: 'custom_tool',

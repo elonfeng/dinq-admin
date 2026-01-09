@@ -113,6 +113,26 @@ const router = createRouter({
       },
     },
     {
+      path: '/user-stats',
+      name: 'user-stats',
+      component: () => import('@/views/UserStatsView.vue'),
+      meta: {
+        title: '用户统计',
+        icon: 'BarChartOutlined',
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/query-analysis',
+      name: 'query-analysis',
+      component: () => import('@/views/QueryAnalysisView.vue'),
+      meta: {
+        title: 'Query 分析',
+        icon: 'SearchOutlined',
+        requiresAuth: true,
+      },
+    },
+    {
       path: '/custom_tool',
       name: 'custom_tool',
       component: () => import('@/views/ToolsView.vue'),

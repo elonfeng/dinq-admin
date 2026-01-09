@@ -11,6 +11,8 @@ import {
   CopyOutlined,
   ImportOutlined,
   AlertOutlined,
+  DatabaseOutlined,
+  SyncOutlined,
 } from '@ant-design/icons-vue'
 import type { UploadProps } from 'ant-design-vue'
 import apiClient from '@/services/api'
@@ -385,6 +387,48 @@ const updateServiceLimit = (service: string, limit: number) => {
   alertConfig.value.service_limits[service] = limit
 }
 
+// === Vector Tools State ===
+interface ReindexResult {
+  total: number
+  success: number
+  failed: number
+  failed_ids?: string[]
+}
+
+const reindexLoading = ref(false)
+const reindexResult = ref<ReindexResult | null>(null)
+
+// === Vector Tools Methods ===
+const reindexProfiles = async () => {
+  Modal.confirm({
+    title: '确认重建向量索引',
+    content: '这将重新生成所有用户的 profile embedding，可能需要较长时间。确定继续吗？',
+    okText: '开始重建',
+    cancelText: '取消',
+    onOk: async () => {
+      reindexLoading.value = true
+      reindexResult.value = null
+      try {
+        const resp = await apiClient.post<{
+          success: boolean
+          message: string
+          data: ReindexResult
+        }>('/admin/toolbox/reindex-profiles')
+        if (resp.data.success) {
+          reindexResult.value = resp.data.data
+          message.success(`重建完成: ${resp.data.data.success}/${resp.data.data.total} 成功`)
+        } else {
+          message.error(resp.data.message || '重建失败')
+        }
+      } catch (e: any) {
+        message.error(e.response?.data?.error || '重建失败')
+      } finally {
+        reindexLoading.value = false
+      }
+    },
+  })
+}
+
 onMounted(() => {
   loadRoleModels()
   loadCategories()
@@ -660,6 +704,54 @@ onMounted(() => {
             </div>
           </a-space>
         </a-spin>
+      </a-tab-pane>
+
+      <!-- Vector Tools Tab -->
+      <a-tab-pane key="vector-tools" tab="Vector Tools">
+        <template #tab>
+          <span><DatabaseOutlined /> Vector Tools</span>
+        </template>
+        <a-space direction="vertical" :size="16" style="width: 100%">
+          <!-- 重建向量索引 -->
+          <a-card title="重建用户向量索引" size="small">
+            <a-alert
+              message="重建所有用户的 profile embedding"
+              description="此操作会遍历所有用户，重新生成向量索引。适用于向量化逻辑变更后需要全量更新的场景。"
+              type="info"
+              show-icon
+              style="margin-bottom: 16px"
+            />
+            <a-button type="primary" :loading="reindexLoading" @click="reindexProfiles">
+              <template #icon><SyncOutlined /></template>
+              开始重建
+            </a-button>
+
+            <!-- 结果展示 -->
+            <div v-if="reindexResult" style="margin-top: 16px">
+              <a-descriptions bordered size="small" :column="3">
+                <a-descriptions-item label="总用户数">
+                  {{ reindexResult.total }}
+                </a-descriptions-item>
+                <a-descriptions-item label="成功">
+                  <span style="color: #52c41a">{{ reindexResult.success }}</span>
+                </a-descriptions-item>
+                <a-descriptions-item label="失败">
+                  <span :style="{ color: reindexResult.failed > 0 ? '#ff4d4f' : '#999' }">
+                    {{ reindexResult.failed }}
+                  </span>
+                </a-descriptions-item>
+              </a-descriptions>
+              <div v-if="reindexResult.failed_ids && reindexResult.failed_ids.length > 0" style="margin-top: 12px">
+                <a-typography-text type="secondary">失败的用户 ID:</a-typography-text>
+                <div style="max-height: 200px; overflow-y: auto; margin-top: 8px">
+                  <a-tag v-for="id in reindexResult.failed_ids" :key="id" color="red" style="margin: 2px">
+                    {{ id }}
+                  </a-tag>
+                </div>
+              </div>
+            </div>
+          </a-card>
+        </a-space>
       </a-tab-pane>
     </a-tabs>
 

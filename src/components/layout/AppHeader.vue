@@ -2,11 +2,9 @@
 import { h } from 'vue'
 import { useRouter } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
-import { BulbOutlined, BulbFilled, UserOutlined, LogoutOutlined, ExclamationCircleOutlined } from '@ant-design/icons-vue'
-import { useTheme } from '@/composables/useTheme'
+import { UserOutlined, LogoutOutlined, ExclamationCircleOutlined } from '@ant-design/icons-vue'
 import { useAuthStore } from '@/stores/authStore'
 
-const { isDark, toggleDark } = useTheme()
 const authStore = useAuthStore()
 const router = useRouter()
 
@@ -34,15 +32,6 @@ function handleLogout() {
       <UserOutlined style="margin-right: 6px" />
       <span>{{ authStore.username }}</span>
     </div>
-
-    <!-- Theme toggle button -->
-    <a-tooltip :title="isDark ? '切换到浅色模式' : '切换到深色模式'" placement="bottom">
-      <a-button type="text" size="large" @click="toggleDark()" class="action-btn">
-        <template #icon>
-          <component :is="isDark ? BulbFilled : BulbOutlined" />
-        </template>
-      </a-button>
-    </a-tooltip>
 
     <!-- Logout button -->
     <a-tooltip title="退出登录" placement="bottom">
