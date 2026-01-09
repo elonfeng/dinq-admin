@@ -14,6 +14,8 @@ import {
   EditOutlined,
 } from '@ant-design/icons-vue'
 import { invitationCodeService } from '@/services/invitationCodeService'
+import { statsService } from '@/services/statsService'
+import type { InviteCodeStat } from '@/types/stats'
 import type {
   InvitationCodeWithUsage,
   InvitationCodeType,
@@ -132,6 +134,10 @@ const codeToDelete = ref<string | null>(null)
 const editNotesModalOpen = ref(false)
 const editingNotes = ref(false)
 const editNotesForm = ref({ code: '', notes: '' })
+
+// 邀请码使用统计
+const topInviteCodes = ref<InviteCodeStat[]>([])
+const loadingTopCodes = ref(false)
 
 async function fetchCodes() {
   loading.value = true
@@ -375,6 +381,18 @@ async function submitEditNotes() {
   }
 }
 
+async function fetchTopInviteCodes() {
+  loadingTopCodes.value = true
+  try {
+    const stats = await statsService.getUserStats()
+    topInviteCodes.value = stats.top_invite_codes || []
+  } catch (e) {
+    console.error('Failed to load top invite codes:', e)
+  } finally {
+    loadingTopCodes.value = false
+  }
+}
+
 watch([sourceFilter, typeFilter, notesFilter], () => {
   pagination.value.current = 1
   fetchCodes()
@@ -382,6 +400,7 @@ watch([sourceFilter, typeFilter, notesFilter], () => {
 
 onMounted(() => {
   fetchCodes()
+  fetchTopInviteCodes()
 })
 </script>
 
@@ -434,6 +453,20 @@ onMounted(() => {
         </a-card>
       </a-col>
     </a-row>
+
+    <!-- 邀请码使用统计 -->
+    <a-card class="top-codes-card" :loading="loadingTopCodes">
+      <template #title>
+        <span>使用统计（Top 10）</span>
+      </template>
+      <div v-if="topInviteCodes.length > 0" class="top-codes-list">
+        <div v-for="item in topInviteCodes" :key="item.invite_code" class="top-code-item">
+          <code class="code-text">{{ item.invite_code }}</code>
+          <span class="code-count">{{ item.user_count }} 人</span>
+        </div>
+      </div>
+      <a-empty v-else description="暂无使用数据" :image="null" />
+    </a-card>
 
     <a-card class="table-card" :loading="loading">
       <div class="table-toolbar">
@@ -806,6 +839,39 @@ onMounted(() => {
 
 .summary-card.expired .value {
   color: #faad14;
+}
+
+.top-codes-card {
+  margin-top: 16px;
+}
+
+.top-codes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.top-code-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
+}
+
+.top-code-item .code-text {
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.top-code-item .code-count {
+  color: #1890ff;
+  font-weight: 500;
+  font-size: 13px;
 }
 
 .table-card {

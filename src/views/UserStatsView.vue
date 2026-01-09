@@ -17,7 +17,6 @@ import {
   GoogleOutlined,
   GithubOutlined,
   DeleteOutlined,
-  GiftOutlined,
 } from '@ant-design/icons-vue'
 import { statsService } from '@/services/statsService'
 import type { UserStats, RecentUserInfo, UserDetailInfo } from '@/types/stats'
@@ -95,6 +94,12 @@ const columns = [
     dataIndex: 'auth_provider',
     key: 'auth_provider',
     width: 80,
+  },
+  {
+    title: '邀请码',
+    dataIndex: 'invite_code',
+    key: 'invite_code',
+    width: 100,
   },
   {
     title: '积分',
@@ -319,31 +324,13 @@ onMounted(() => {
       </a-row>
     </a-card>
 
-    <!-- 邀请码使用统计 -->
-    <a-card :loading="loadingStats" title="邀请码使用统计（Top 10）" class="stats-card">
-      <template v-if="stats.top_invite_codes.length > 0">
-        <a-row :gutter="[16, 12]">
-          <a-col v-for="item in stats.top_invite_codes" :key="item.invite_code" :span="6">
-            <div class="invite-code-item">
-              <div class="invite-code">
-                <GiftOutlined style="margin-right: 6px; color: #1890ff" />
-                {{ item.invite_code }}
-              </div>
-              <div class="invite-count">{{ item.user_count }} 人</div>
-            </div>
-          </a-col>
-        </a-row>
-      </template>
-      <a-empty v-else description="暂无邀请码使用数据" />
-    </a-card>
-
     <!-- 最新注册用户列表 -->
     <a-card title="最新注册用户" class="stats-card">
       <a-table
         :columns="columns"
         :data-source="users"
         :loading="loadingUsers"
-        :scroll="{ x: 950 }"
+        :scroll="{ x: 1050 }"
         :pagination="{
           current: pagination.current,
           pageSize: pagination.pageSize,
@@ -380,6 +367,10 @@ onMounted(() => {
             <a-tag :color="getAuthProviderTagColor(record.auth_provider)">
               {{ AUTH_PROVIDER_LABELS[record.auth_provider] || record.auth_provider || '-' }}
             </a-tag>
+          </template>
+          <template v-else-if="column.key === 'invite_code'">
+            <code v-if="record.invite_code" class="invite-code">{{ record.invite_code }}</code>
+            <span v-else class="text-muted">-</span>
           </template>
           <template v-else-if="column.key === 'credit_balance'">
             {{ record.credit_balance }}
@@ -491,23 +482,11 @@ onMounted(() => {
   color: #999;
 }
 
-.invite-code-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: #fafafa;
-  border-radius: 6px;
-  border: 1px solid #f0f0f0;
-}
-
 .invite-code {
-  font-weight: 500;
-  color: #262626;
-}
-
-.invite-count {
-  color: #1890ff;
-  font-weight: 600;
+  font-family: monospace;
+  font-size: 12px;
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 </style>

@@ -1,32 +1,24 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import {
   PlusOutlined,
-  DeleteOutlined,
-  SearchOutlined,
   ReloadOutlined,
   ExclamationCircleOutlined,
+  CloseOutlined,
 } from '@ant-design/icons-vue'
 import { domainService } from '@/services/domainService'
 import type { ReservedDomain } from '@/services/domainService'
-import { formatDateTime } from '@/utils/formatter'
 
 // 列表数据
 const domains = ref<ReservedDomain[]>([])
 const loading = ref(false)
-const pagination = ref({
-  current: 1,
-  pageSize: 20,
-  total: 0,
-})
-const keyword = ref('')
 
 // 添加弹窗
 const addVisible = ref(false)
 const addForm = ref({
   domain: '',
-  reason: '',
+  reason: '系统保留',
 })
 const addLoading = ref(false)
 
@@ -34,68 +26,54 @@ const addLoading = ref(false)
 const batchVisible = ref(false)
 const batchForm = ref({
   domains: '',
-  reason: '',
+  reason: '系统保留',
 })
 const batchLoading = ref(false)
 
-// 表格列
-const columns = [
-  {
-    title: '域名',
-    dataIndex: 'domain',
-    key: 'domain',
-    width: 200,
-  },
-  {
-    title: '保留原因',
-    dataIndex: 'reason',
-    key: 'reason',
-    ellipsis: true,
-  },
-  {
-    title: '创建时间',
-    dataIndex: 'created_at',
-    key: 'created_at',
-    width: 180,
-  },
-  {
-    title: '操作',
-    key: 'action',
-    width: 80,
-    fixed: 'right' as const,
-  },
-]
+// 预设原因选项
+const reasonOptions = ['系统保留', '品牌保护', '敏感词']
+
+// 按原因分组
+const groupedDomains = computed(() => {
+  const groups: Record<string, ReservedDomain[]> = {}
+  for (const d of domains.value) {
+    const reason = d.reason || '未分类'
+    if (!groups[reason]) {
+      groups[reason] = []
+    }
+    groups[reason].push(d)
+  }
+  // 排序：系统保留 > 品牌保护 > 敏感词 > 其他
+  const order = ['系统保留', '品牌保护', '敏感词']
+  const sorted: [string, ReservedDomain[]][] = []
+  for (const key of order) {
+    if (groups[key]) {
+      sorted.push([key, groups[key]])
+      delete groups[key]
+    }
+  }
+  // 剩余的按字母顺序
+  for (const key of Object.keys(groups).sort()) {
+    sorted.push([key, groups[key]])
+  }
+  return sorted
+})
+
+// 统计
+const totalCount = computed(() => domains.value.length)
 
 // 加载数据
 const loadData = async () => {
   loading.value = true
   try {
-    const result = await domainService.getList(
-      pagination.value.current,
-      pagination.value.pageSize,
-      keyword.value
-    )
+    const result = await domainService.getList(1, 1000, '')
     domains.value = result.items
-    pagination.value.total = result.total
   } catch (e) {
     console.error('Failed to load domains:', e)
     message.error('加载数据失败')
   } finally {
     loading.value = false
   }
-}
-
-// 搜索
-const handleSearch = () => {
-  pagination.value.current = 1
-  loadData()
-}
-
-// 分页变化
-const handleTableChange = (pag: any) => {
-  pagination.value.current = pag.current
-  pagination.value.pageSize = pag.pageSize
-  loadData()
 }
 
 // 添加域名
@@ -107,10 +85,10 @@ const handleAdd = async () => {
 
   addLoading.value = true
   try {
-    await domainService.add(addForm.value.domain.trim(), addForm.value.reason.trim())
+    await domainService.add(addForm.value.domain.trim(), addForm.value.reason)
     message.success('添加成功')
     addVisible.value = false
-    addForm.value = { domain: '', reason: '' }
+    addForm.value = { domain: '', reason: '系统保留' }
     loadData()
   } catch (e: any) {
     message.error(e.response?.data?.error || '添加失败')
@@ -127,7 +105,6 @@ const handleBatchAdd = async () => {
     return
   }
 
-  // 按换行或逗号分隔
   const domainList = domainsText
     .split(/[\n,]/)
     .map(d => d.trim())
@@ -140,10 +117,10 @@ const handleBatchAdd = async () => {
 
   batchLoading.value = true
   try {
-    const result = await domainService.batchAdd(domainList, batchForm.value.reason.trim())
-    message.success(`成功添加 ${result.added} 个，跳过 ${result.skipped} 个已存在的域名`)
+    const result = await domainService.batchAdd(domainList, batchForm.value.reason)
+    message.success(`成功添加 ${result.added} 个，跳过 ${result.skipped} 个已存在`)
     batchVisible.value = false
-    batchForm.value = { domains: '', reason: '' }
+    batchForm.value = { domains: '', reason: '系统保留' }
     loadData()
   } catch (e: any) {
     message.error(e.response?.data?.error || '批量添加失败')
@@ -157,7 +134,7 @@ const handleDelete = (record: ReservedDomain) => {
   Modal.confirm({
     title: '确认删除',
     icon: ExclamationCircleOutlined,
-    content: `确定要删除保留域名 "${record.domain}" 吗？删除后该域名可被用户申请。`,
+    content: `确定要删除 "${record.domain}" 吗？`,
     okText: '删除',
     okType: 'danger',
     cancelText: '取消',
@@ -173,6 +150,16 @@ const handleDelete = (record: ReservedDomain) => {
   })
 }
 
+// 获取分类颜色
+const getReasonColor = (reason: string) => {
+  const colors: Record<string, string> = {
+    '系统保留': 'default',
+    '品牌保护': 'blue',
+    '敏感词': 'red',
+  }
+  return colors[reason] || 'default'
+}
+
 onMounted(() => {
   loadData()
 })
@@ -180,74 +167,44 @@ onMounted(() => {
 
 <template>
   <div class="domain-manage">
-    <a-page-header title="域名管理" sub-title="管理保留域名，防止用户申请敏感域名">
+    <a-page-header title="域名管理" :sub-title="`共 ${totalCount} 个保留域名`">
       <template #extra>
         <a-space>
-          <a-button @click="batchVisible = true">
-            批量添加
+          <a-button @click="loadData" :loading="loading">
+            <template #icon><ReloadOutlined /></template>
           </a-button>
+          <a-button @click="batchVisible = true">批量添加</a-button>
           <a-button type="primary" @click="addVisible = true">
             <template #icon><PlusOutlined /></template>
-            添加域名
+            添加
           </a-button>
         </a-space>
       </template>
     </a-page-header>
 
-    <!-- 搜索栏 -->
-    <a-card class="search-card">
-      <a-space>
-        <a-input-search
-          v-model:value="keyword"
-          placeholder="搜索域名或原因"
-          style="width: 300px"
-          @search="handleSearch"
-          allow-clear
+    <a-spin :spinning="loading">
+      <div class="domain-groups">
+        <a-card
+          v-for="[reason, items] in groupedDomains"
+          :key="reason"
+          :title="`${reason} (${items.length})`"
+          size="small"
+          class="group-card"
         >
-          <template #prefix><SearchOutlined /></template>
-        </a-input-search>
-        <a-button @click="loadData" :loading="loading">
-          <template #icon><ReloadOutlined /></template>
-          刷新
-        </a-button>
-      </a-space>
-    </a-card>
-
-    <!-- 数据表格 -->
-    <a-card class="table-card">
-      <a-table
-        :columns="columns"
-        :data-source="domains"
-        :loading="loading"
-        :pagination="{
-          current: pagination.current,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total: number) => `共 ${total} 条`,
-        }"
-        row-key="id"
-        @change="handleTableChange"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'domain'">
-            <a-typography-text code>{{ record.domain }}</a-typography-text>
-          </template>
-          <template v-else-if="column.key === 'reason'">
-            {{ record.reason || '-' }}
-          </template>
-          <template v-else-if="column.key === 'created_at'">
-            {{ record.created_at ? formatDateTime(record.created_at) : '-' }}
-          </template>
-          <template v-else-if="column.key === 'action'">
-            <a-button type="link" danger size="small" @click="handleDelete(record)">
-              <template #icon><DeleteOutlined /></template>
-            </a-button>
-          </template>
-        </template>
-      </a-table>
-    </a-card>
+          <div class="domain-tags">
+            <a-tag
+              v-for="item in items"
+              :key="item.id"
+              :color="getReasonColor(reason)"
+              closable
+              @close.prevent="handleDelete(item)"
+            >
+              {{ item.domain }}
+            </a-tag>
+          </div>
+        </a-card>
+      </div>
+    </a-spin>
 
     <!-- 添加弹窗 -->
     <a-modal
@@ -258,16 +215,12 @@ onMounted(() => {
     >
       <a-form layout="vertical">
         <a-form-item label="域名" required>
-          <a-input
-            v-model:value="addForm.domain"
-            placeholder="输入要保留的域名"
-          />
+          <a-input v-model:value="addForm.domain" placeholder="输入域名" />
         </a-form-item>
-        <a-form-item label="保留原因">
-          <a-input
-            v-model:value="addForm.reason"
-            placeholder="可选，如：品牌保护、系统保留等"
-          />
+        <a-form-item label="分类">
+          <a-radio-group v-model:value="addForm.reason">
+            <a-radio v-for="r in reasonOptions" :key="r" :value="r">{{ r }}</a-radio>
+          </a-radio-group>
         </a-form-item>
       </a-form>
     </a-modal>
@@ -275,7 +228,7 @@ onMounted(() => {
     <!-- 批量添加弹窗 -->
     <a-modal
       v-model:open="batchVisible"
-      title="批量添加保留域名"
+      title="批量添加"
       @ok="handleBatchAdd"
       :confirm-loading="batchLoading"
       width="500px"
@@ -284,19 +237,17 @@ onMounted(() => {
         <a-form-item label="域名列表" required>
           <a-textarea
             v-model:value="batchForm.domains"
-            placeholder="每行一个域名，或用逗号分隔"
-            :rows="8"
+            placeholder="每行一个，或用逗号分隔"
+            :rows="6"
           />
         </a-form-item>
-        <a-form-item label="保留原因">
-          <a-input
-            v-model:value="batchForm.reason"
-            placeholder="可选，统一的保留原因"
-          />
+        <a-form-item label="分类">
+          <a-radio-group v-model:value="batchForm.reason">
+            <a-radio v-for="r in reasonOptions" :key="r" :value="r">{{ r }}</a-radio>
+          </a-radio-group>
         </a-form-item>
       </a-form>
     </a-modal>
-
   </div>
 </template>
 
@@ -305,11 +256,24 @@ onMounted(() => {
   padding: 24px;
 }
 
-.search-card {
-  margin-bottom: 16px;
+.domain-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.table-card {
-  margin-bottom: 24px;
+.group-card {
+  margin-bottom: 0;
+}
+
+.domain-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.domain-tags .ant-tag {
+  margin: 0;
+  font-family: monospace;
 }
 </style>

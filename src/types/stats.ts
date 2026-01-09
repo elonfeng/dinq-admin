@@ -39,6 +39,7 @@ export interface RecentUserInfo {
   tier: string
   flow_status: string
   auth_provider: string
+  invite_code: string
   credit_balance: number
   created_at: string
 }
