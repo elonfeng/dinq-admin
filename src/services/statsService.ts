@@ -20,7 +20,22 @@ export const statsService = {
    */
   async getUserStats(): Promise<UserStats> {
     const response = await apiClient.get('/admin/users/stats')
-    return response.data?.data || response.data
+    const data = response.data?.data || response.data || {}
+    return {
+      total_users: data.total_users || 0,
+      today_new_users: data.today_new_users || 0,
+      this_week_new_users: data.this_week_new_users || 0,
+      this_month_new_users: data.this_month_new_users || 0,
+      init_users: data.init_users || 0,
+      domain_users: data.domain_users || 0,
+      resume_users: data.resume_users || 0,
+      success_users: data.success_users || 0,
+      deleted_users: data.deleted_users || 0,
+      email_users: data.email_users || 0,
+      google_users: data.google_users || 0,
+      github_users: data.github_users || 0,
+      top_invite_codes: data.top_invite_codes || [],
+    }
   },
 
   /**
