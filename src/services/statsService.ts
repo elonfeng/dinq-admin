@@ -48,7 +48,14 @@ export const statsService = {
    */
   async getQueryStats(): Promise<QueryStats> {
     const response = await apiClient.get('/admin/queries/stats')
-    return response.data?.data || response.data
+    const data = response.data?.data || response.data
+    return {
+      total_queries: data.total_queries || 0,
+      today_queries: data.today_queries || 0,
+      this_month_queries: data.this_month_queries || 0,
+      global_queries: data.global_queries || 0,
+      people_search_queries: data.people_search_queries || 0,
+    }
   },
 
   /**
