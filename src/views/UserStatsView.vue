@@ -10,10 +10,16 @@ import {
   EnvironmentOutlined,
   BankOutlined,
   BookOutlined,
+  CheckCircleOutlined,
+  FormOutlined,
+  GlobalOutlined,
+  FileTextOutlined,
+  GoogleOutlined,
+  GithubOutlined,
 } from '@ant-design/icons-vue'
 import { statsService } from '@/services/statsService'
 import type { UserStats, RecentUserInfo, UserDetailInfo } from '@/types/stats'
-import { TIER_LABELS } from '@/types/stats'
+import { TIER_LABELS, FLOW_STATUS_LABELS, AUTH_PROVIDER_LABELS } from '@/types/stats'
 import { formatDateTime } from '@/utils/formatter'
 
 // 统计数据
@@ -22,6 +28,13 @@ const stats = ref<UserStats>({
   today_new_users: 0,
   this_week_new_users: 0,
   this_month_new_users: 0,
+  init_users: 0,
+  domain_users: 0,
+  resume_users: 0,
+  success_users: 0,
+  email_users: 0,
+  google_users: 0,
+  github_users: 0,
 })
 const loadingStats = ref(false)
 
@@ -66,6 +79,18 @@ const columns = [
     width: 100,
   },
   {
+    title: '注册状态',
+    dataIndex: 'flow_status',
+    key: 'flow_status',
+    width: 110,
+  },
+  {
+    title: '登录方式',
+    dataIndex: 'auth_provider',
+    key: 'auth_provider',
+    width: 100,
+  },
+  {
     title: '积分',
     dataIndex: 'credit_balance',
     key: 'credit_balance',
@@ -93,6 +118,27 @@ const getTierTagColor = (tier: string) => {
     plus_monthly: 'gold',
   }
   return colors[tier] || 'default'
+}
+
+// 获取注册状态标签颜色
+const getFlowStatusTagColor = (status: string) => {
+  const colors: Record<string, string> = {
+    init: 'default',
+    domain: 'blue',
+    resume: 'orange',
+    success: 'green',
+  }
+  return colors[status] || 'default'
+}
+
+// 获取登录方式标签颜色
+const getAuthProviderTagColor = (provider: string) => {
+  const colors: Record<string, string> = {
+    email: 'default',
+    google: 'red',
+    github: 'purple',
+  }
+  return colors[provider] || 'default'
 }
 
 // 加载统计数据
@@ -219,6 +265,91 @@ onMounted(() => {
       </a-col>
     </a-row>
 
+    <!-- 注册状态统计卡片 -->
+    <a-row :gutter="16" class="stats-row">
+      <a-col :span="6">
+        <a-card :loading="loadingStats">
+          <a-statistic
+            title="仅注册"
+            :value="stats.init_users"
+            :value-style="{ color: '#8c8c8c' }"
+          >
+            <template #prefix><FormOutlined /></template>
+          </a-statistic>
+        </a-card>
+      </a-col>
+      <a-col :span="6">
+        <a-card :loading="loadingStats">
+          <a-statistic
+            title="已申请域名"
+            :value="stats.domain_users"
+            :value-style="{ color: '#1890ff' }"
+          >
+            <template #prefix><GlobalOutlined /></template>
+          </a-statistic>
+        </a-card>
+      </a-col>
+      <a-col :span="6">
+        <a-card :loading="loadingStats">
+          <a-statistic
+            title="分析简历"
+            :value="stats.resume_users"
+            :value-style="{ color: '#fa8c16' }"
+          >
+            <template #prefix><FileTextOutlined /></template>
+          </a-statistic>
+        </a-card>
+      </a-col>
+      <a-col :span="6">
+        <a-card :loading="loadingStats">
+          <a-statistic
+            title="生成成功"
+            :value="stats.success_users"
+            :value-style="{ color: '#52c41a' }"
+          >
+            <template #prefix><CheckCircleOutlined /></template>
+          </a-statistic>
+        </a-card>
+      </a-col>
+    </a-row>
+
+    <!-- 登录方式统计卡片 -->
+    <a-row :gutter="16" class="stats-row">
+      <a-col :span="8">
+        <a-card :loading="loadingStats">
+          <a-statistic
+            title="邮箱注册"
+            :value="stats.email_users"
+            :value-style="{ color: '#8c8c8c' }"
+          >
+            <template #prefix><MailOutlined /></template>
+          </a-statistic>
+        </a-card>
+      </a-col>
+      <a-col :span="8">
+        <a-card :loading="loadingStats">
+          <a-statistic
+            title="Google 登录"
+            :value="stats.google_users"
+            :value-style="{ color: '#f5222d' }"
+          >
+            <template #prefix><GoogleOutlined /></template>
+          </a-statistic>
+        </a-card>
+      </a-col>
+      <a-col :span="8">
+        <a-card :loading="loadingStats">
+          <a-statistic
+            title="GitHub 登录"
+            :value="stats.github_users"
+            :value-style="{ color: '#722ed1' }"
+          >
+            <template #prefix><GithubOutlined /></template>
+          </a-statistic>
+        </a-card>
+      </a-col>
+    </a-row>
+
     <!-- 最新注册用户列表 -->
     <a-card title="最新注册用户" class="users-card">
       <a-table
@@ -250,6 +381,16 @@ onMounted(() => {
           <template v-else-if="column.key === 'tier'">
             <a-tag :color="getTierTagColor(record.tier)">
               {{ TIER_LABELS[record.tier] || record.tier || 'Free' }}
+            </a-tag>
+          </template>
+          <template v-else-if="column.key === 'flow_status'">
+            <a-tag :color="getFlowStatusTagColor(record.flow_status)">
+              {{ FLOW_STATUS_LABELS[record.flow_status] || record.flow_status || '-' }}
+            </a-tag>
+          </template>
+          <template v-else-if="column.key === 'auth_provider'">
+            <a-tag :color="getAuthProviderTagColor(record.auth_provider)">
+              {{ AUTH_PROVIDER_LABELS[record.auth_provider] || record.auth_provider || '-' }}
             </a-tag>
           </template>
           <template v-else-if="column.key === 'credit_balance'">
@@ -295,6 +436,16 @@ onMounted(() => {
             <a-descriptions-item label="套餐">
               <a-tag :color="getTierTagColor(userDetail.tier)">
                 {{ TIER_LABELS[userDetail.tier] || userDetail.tier || 'Free' }}
+              </a-tag>
+            </a-descriptions-item>
+            <a-descriptions-item label="注册状态">
+              <a-tag :color="getFlowStatusTagColor(userDetail.flow_status)">
+                {{ FLOW_STATUS_LABELS[userDetail.flow_status] || userDetail.flow_status || '-' }}
+              </a-tag>
+            </a-descriptions-item>
+            <a-descriptions-item label="登录方式">
+              <a-tag :color="getAuthProviderTagColor(userDetail.auth_provider)">
+                {{ AUTH_PROVIDER_LABELS[userDetail.auth_provider] || userDetail.auth_provider || '-' }}
               </a-tag>
             </a-descriptions-item>
             <a-descriptions-item label="套餐状态">

@@ -8,6 +8,7 @@ import {
   UserOutlined,
   ClockCircleOutlined,
   BarChartOutlined,
+  LeftOutlined,
 } from '@ant-design/icons-vue'
 import { statsService } from '@/services/statsService'
 import type { QueryStats, TopUserItem, QueryItem } from '@/types/stats'
@@ -248,115 +249,112 @@ onMounted(() => {
       </a-col>
     </a-row>
 
-    <!-- 前十用户 / Query 列表 -->
-    <a-card class="main-card">
-      <!-- 前十用户视图 -->
-      <template v-if="!selectedUserId">
-        <template #title>
-          <a-space>
-            <span>月度 Query 前十用户</span>
-            <a-select
-              v-model:value="selectedMonth"
-              :options="monthOptions"
-              style="width: 140px"
-              @change="handleMonthChange"
+    <!-- 前十用户视图 -->
+    <a-card v-if="!selectedUserId" class="main-card">
+      <template #title>
+        <a-space>
+          <span>月度 Query 前十用户</span>
+          <a-select
+            v-model:value="selectedMonth"
+            :options="monthOptions"
+            style="width: 140px"
+            @change="handleMonthChange"
+          />
+        </a-space>
+      </template>
+
+      <a-table
+        :columns="topUsersColumns"
+        :data-source="topUsers"
+        :loading="loadingTopUsers"
+        :pagination="false"
+        row-key="user_id"
+      >
+        <template #bodyCell="{ column, record, index }">
+          <template v-if="column.key === 'rank'">
+            <a-badge
+              :count="index + 1"
+              :number-style="{
+                backgroundColor: index < 3 ? ['#f5222d', '#fa8c16', '#faad14'][index] : '#d9d9d9',
+              }"
             />
-          </a-space>
-        </template>
-
-        <a-table
-          :columns="topUsersColumns"
-          :data-source="topUsers"
-          :loading="loadingTopUsers"
-          :pagination="false"
-          row-key="user_id"
-        >
-          <template #bodyCell="{ column, record, index }">
-            <template v-if="column.key === 'rank'">
-              <a-badge
-                :count="index + 1"
-                :number-style="{
-                  backgroundColor: index < 3 ? ['#f5222d', '#fa8c16', '#faad14'][index] : '#d9d9d9',
-                }"
-              />
-            </template>
-            <template v-else-if="column.key === 'user_id'">
-              <a-typography-text copyable :content="record.user_id">
-                <UserOutlined style="margin-right: 8px" />
-                {{ record.user_id }}
-              </a-typography-text>
-            </template>
-            <template v-else-if="column.key === 'query_count'">
-              <a-tag color="blue">{{ record.query_count }}</a-tag>
-            </template>
-            <template v-else-if="column.key === 'action'">
-              <a-button type="link" size="small" @click="viewUserQueries(record.user_id)">
-                查看详情
-              </a-button>
-            </template>
           </template>
-
-          <template #emptyText>
-            <a-empty description="本月暂无数据" />
+          <template v-else-if="column.key === 'user_id'">
+            <a-typography-text copyable :content="record.user_id">
+              <UserOutlined style="margin-right: 8px" />
+              {{ record.user_id }}
+            </a-typography-text>
           </template>
-        </a-table>
-      </template>
-
-      <!-- Query 列表视图 -->
-      <template v-else>
-        <template #title>
-          <a-space>
-            <a-button type="link" @click="backToTopUsers">
-              <template #icon><span>&larr;</span></template>
-              返回
+          <template v-else-if="column.key === 'query_count'">
+            <a-tag color="blue">{{ record.query_count }}</a-tag>
+          </template>
+          <template v-else-if="column.key === 'action'">
+            <a-button type="link" size="small" @click="viewUserQueries(record.user_id)">
+              查看详情
             </a-button>
-            <a-divider type="vertical" />
-            <UserOutlined />
-            <span>{{ selectedUserId }} 的 Query 历史</span>
-          </a-space>
+          </template>
         </template>
 
-        <a-table
-          :columns="queryColumns"
-          :data-source="queries"
-          :loading="loadingQueries"
-          :pagination="{
-            current: queryPagination.current,
-            pageSize: queryPagination.pageSize,
-            total: queryPagination.total,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total: number) => `共 ${total} 条`,
-          }"
-          row-key="id"
-          @change="handleQueryTableChange"
-        >
-          <template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'query'">
-              <a-tooltip :title="record.query" placement="topLeft">
-                <span>{{ record.query }}</span>
-              </a-tooltip>
-            </template>
-            <template v-else-if="column.key === 'result_count'">
-              {{ record.result_count ?? '-' }}
-            </template>
-            <template v-else-if="column.key === 'duration_ms'">
-              <template v-if="record.duration_ms">
-                <ClockCircleOutlined style="margin-right: 4px" />
-                {{ record.duration_ms }}
-              </template>
-              <span v-else>-</span>
-            </template>
-            <template v-else-if="column.key === 'created_at'">
-              {{ record.created_at ? formatDateTime(record.created_at) : '-' }}
-            </template>
-          </template>
+        <template #emptyText>
+          <a-empty description="本月暂无数据" />
+        </template>
+      </a-table>
+    </a-card>
 
-          <template #emptyText>
-            <a-empty description="暂无 Query 记录" />
-          </template>
-        </a-table>
+    <!-- Query 列表视图 -->
+    <a-card v-else class="main-card">
+      <template #title>
+        <a-space>
+          <a-button type="link" @click="backToTopUsers">
+            <LeftOutlined />
+            返回
+          </a-button>
+          <a-divider type="vertical" />
+          <UserOutlined />
+          <span>{{ selectedUserId }} 的 Query 历史</span>
+        </a-space>
       </template>
+
+      <a-table
+        :columns="queryColumns"
+        :data-source="queries"
+        :loading="loadingQueries"
+        :pagination="{
+          current: queryPagination.current,
+          pageSize: queryPagination.pageSize,
+          total: queryPagination.total,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total: number) => `共 ${total} 条`,
+        }"
+        row-key="id"
+        @change="handleQueryTableChange"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'query'">
+            <a-tooltip :title="record.query" placement="topLeft">
+              <span>{{ record.query }}</span>
+            </a-tooltip>
+          </template>
+          <template v-else-if="column.key === 'result_count'">
+            {{ record.result_count ?? '-' }}
+          </template>
+          <template v-else-if="column.key === 'duration_ms'">
+            <span v-if="record.duration_ms">
+              <ClockCircleOutlined style="margin-right: 4px" />
+              {{ record.duration_ms }}
+            </span>
+            <span v-else>-</span>
+          </template>
+          <template v-else-if="column.key === 'created_at'">
+            {{ record.created_at ? formatDateTime(record.created_at) : '-' }}
+          </template>
+        </template>
+
+        <template #emptyText>
+          <a-empty description="暂无 Query 记录" />
+        </template>
+      </a-table>
     </a-card>
   </div>
 </template>

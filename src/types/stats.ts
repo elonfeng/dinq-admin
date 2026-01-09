@@ -10,6 +10,15 @@ export interface UserStats {
   today_new_users: number
   this_week_new_users: number
   this_month_new_users: number
+  // 按流程状态统计
+  init_users: number
+  domain_users: number
+  resume_users: number
+  success_users: number
+  // 按登录方式统计
+  email_users: number
+  google_users: number
+  github_users: number
 }
 
 // 最新注册用户信息
@@ -19,6 +28,8 @@ export interface RecentUserInfo {
   name: string
   domain: string
   tier: string
+  flow_status: string
+  auth_provider: string
   credit_balance: number
   created_at: string
 }
@@ -38,6 +49,8 @@ export interface UserDetailInfo {
   name: string
   domain: string
   tier: string
+  flow_status: string
+  auth_provider: string
   plan: string
   plan_status: string
   credit_balance: number
@@ -94,4 +107,19 @@ export const TIER_LABELS: Record<string, string> = {
   basic_monthly: 'Basic',
   pro_monthly: 'Pro',
   plus_monthly: 'Plus',
+}
+
+// 流程状态显示名称映射
+export const FLOW_STATUS_LABELS: Record<string, string> = {
+  init: '仅注册',
+  domain: '已申请域名',
+  resume: '分析简历',
+  success: '生成成功',
+}
+
+// 登录方式显示名称映射
+export const AUTH_PROVIDER_LABELS: Record<string, string> = {
+  email: '邮箱',
+  google: 'Google',
+  github: 'GitHub',
 }
