@@ -79,6 +79,9 @@ export interface QueryStats {
   total_queries: number
   today_queries: number
   this_month_queries: number
+  // 按类型统计
+  global_queries: number       // 站外搜索
+  people_search_queries: number // 站内搜索
 }
 
 // 前十用户项

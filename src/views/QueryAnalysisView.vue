@@ -20,6 +20,8 @@ const stats = ref<QueryStats>({
   total_queries: 0,
   today_queries: 0,
   this_month_queries: 0,
+  global_queries: 0,
+  people_search_queries: 0,
 })
 const loadingStats = ref(false)
 
@@ -265,6 +267,30 @@ onMounted(() => {
             :value-style="{ color: '#722ed1' }"
           >
             <template #prefix><BarChartOutlined /></template>
+          </a-statistic>
+        </a-card>
+      </a-col>
+    </a-row>
+    <a-row :gutter="16" class="stats-row">
+      <a-col :span="12">
+        <a-card :loading="loadingStats">
+          <a-statistic
+            title="站外搜索 (Global)"
+            :value="stats.global_queries"
+            :value-style="{ color: '#1890ff' }"
+          >
+            <template #prefix><SearchOutlined /></template>
+          </a-statistic>
+        </a-card>
+      </a-col>
+      <a-col :span="12">
+        <a-card :loading="loadingStats">
+          <a-statistic
+            title="站内搜索 (People Search)"
+            :value="stats.people_search_queries"
+            :value-style="{ color: '#13c2c2' }"
+          >
+            <template #prefix><UserOutlined /></template>
           </a-statistic>
         </a-card>
       </a-col>
