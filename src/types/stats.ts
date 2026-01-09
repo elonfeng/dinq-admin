@@ -4,6 +4,12 @@
 
 // ========== 用户统计 ==========
 
+// 邀请码使用统计
+export interface InviteCodeStat {
+  invite_code: string
+  user_count: number
+}
+
 // 用户统计概览
 export interface UserStats {
   total_users: number
@@ -15,10 +21,13 @@ export interface UserStats {
   domain_users: number
   resume_users: number
   success_users: number
+  deleted_users: number
   // 按登录方式统计
   email_users: number
   google_users: number
   github_users: number
+  // 邀请码统计
+  top_invite_codes: InviteCodeStat[]
 }
 
 // 最新注册用户信息
@@ -74,6 +83,8 @@ export interface QueryStats {
 // 前十用户项
 export interface TopUserItem {
   user_id: string
+  name?: string
+  email?: string
   query_count: number
 }
 
@@ -87,7 +98,10 @@ export interface TopUsersResponse {
 export interface QueryItem {
   id: number
   user_id: string
+  name?: string
+  email?: string
   query: string
+  search_type?: string  // global / people_search
   result_count: number | null
   duration_ms: number | null
   created_at: string
@@ -115,6 +129,7 @@ export const FLOW_STATUS_LABELS: Record<string, string> = {
   domain: '已申请域名',
   resume: '分析简历',
   success: '生成成功',
+  deleted: '已注销',
 }
 
 // 登录方式显示名称映射
@@ -122,4 +137,10 @@ export const AUTH_PROVIDER_LABELS: Record<string, string> = {
   email: '邮箱',
   google: 'Google',
   github: 'GitHub',
+}
+
+// 搜索类型显示名称映射
+export const SEARCH_TYPE_LABELS: Record<string, string> = {
+  global: '全局搜索',
+  people_search: '站内搜索',
 }

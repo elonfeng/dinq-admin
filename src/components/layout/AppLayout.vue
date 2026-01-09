@@ -17,6 +17,7 @@ import {
   ToolOutlined,
   BarChartOutlined,
   SearchOutlined,
+  GlobalOutlined,
 } from '@ant-design/icons-vue'
 import AppHeader from './AppHeader.vue'
 
@@ -91,6 +92,12 @@ const menuItems = [
     icon: SearchOutlined,
     label: 'Query 分析',
     path: '/query-analysis',
+  },
+  {
+    key: 'domain-manage',
+    icon: GlobalOutlined,
+    label: '域名管理',
+    path: '/domain-manage',
   },
   {
     key: 'custom_tool',

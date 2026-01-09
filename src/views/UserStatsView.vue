@@ -1,6 +1,16 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { message } from 'ant-design-vue'
+import { use } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { PieChart, BarChart } from 'echarts/charts'
+import {
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+} from 'echarts/components'
+import VChart from 'vue-echarts'
 import {
   UserOutlined,
   TeamOutlined,
@@ -16,11 +26,23 @@ import {
   FileTextOutlined,
   GoogleOutlined,
   GithubOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons-vue'
 import { statsService } from '@/services/statsService'
 import type { UserStats, RecentUserInfo, UserDetailInfo } from '@/types/stats'
 import { TIER_LABELS, FLOW_STATUS_LABELS, AUTH_PROVIDER_LABELS } from '@/types/stats'
 import { formatDateTime } from '@/utils/formatter'
+
+// 注册 ECharts 组件
+use([
+  CanvasRenderer,
+  PieChart,
+  BarChart,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+])
 
 // 统计数据
 const stats = ref<UserStats>({
@@ -32,9 +54,11 @@ const stats = ref<UserStats>({
   domain_users: 0,
   resume_users: 0,
   success_users: 0,
+  deleted_users: 0,
   email_users: 0,
   google_users: 0,
   github_users: 0,
+  top_invite_codes: [],
 })
 const loadingStats = ref(false)
 
@@ -52,60 +76,232 @@ const detailVisible = ref(false)
 const userDetail = ref<UserDetailInfo | null>(null)
 const loadingDetail = ref(false)
 
+// 注册状态饼图配置
+const flowStatusChartOption = computed(() => ({
+  tooltip: {
+    trigger: 'item',
+    formatter: '{b}: {c} ({d}%)',
+  },
+  legend: {
+    orient: 'vertical',
+    right: 10,
+    top: 'center',
+  },
+  series: [
+    {
+      name: '注册状态',
+      type: 'pie',
+      radius: ['40%', '70%'],
+      center: ['40%', '50%'],
+      avoidLabelOverlap: false,
+      itemStyle: {
+        borderRadius: 4,
+        borderColor: '#fff',
+        borderWidth: 2,
+      },
+      label: {
+        show: false,
+      },
+      emphasis: {
+        label: {
+          show: true,
+          fontSize: 14,
+          fontWeight: 'bold',
+        },
+      },
+      data: [
+        { value: stats.value.init_users, name: '仅注册', itemStyle: { color: '#8c8c8c' } },
+        { value: stats.value.domain_users, name: '已申请域名', itemStyle: { color: '#1890ff' } },
+        { value: stats.value.resume_users, name: '分析简历', itemStyle: { color: '#fa8c16' } },
+        { value: stats.value.success_users, name: '生成成功', itemStyle: { color: '#52c41a' } },
+        { value: stats.value.deleted_users, name: '已注销', itemStyle: { color: '#ff4d4f' } },
+      ].filter(item => item.value > 0),
+    },
+  ],
+}))
+
+// 登录方式饼图配置
+const authProviderChartOption = computed(() => ({
+  tooltip: {
+    trigger: 'item',
+    formatter: '{b}: {c} ({d}%)',
+  },
+  legend: {
+    orient: 'vertical',
+    right: 10,
+    top: 'center',
+  },
+  series: [
+    {
+      name: '登录方式',
+      type: 'pie',
+      radius: ['40%', '70%'],
+      center: ['40%', '50%'],
+      avoidLabelOverlap: false,
+      itemStyle: {
+        borderRadius: 4,
+        borderColor: '#fff',
+        borderWidth: 2,
+      },
+      label: {
+        show: false,
+      },
+      emphasis: {
+        label: {
+          show: true,
+          fontSize: 14,
+          fontWeight: 'bold',
+        },
+      },
+      data: [
+        { value: stats.value.email_users, name: '邮箱', itemStyle: { color: '#8c8c8c' } },
+        { value: stats.value.google_users, name: 'Google', itemStyle: { color: '#f5222d' } },
+        { value: stats.value.github_users, name: 'GitHub', itemStyle: { color: '#722ed1' } },
+      ].filter(item => item.value > 0),
+    },
+  ],
+}))
+
+// 用户增长柱状图配置
+const userGrowthChartOption = computed(() => ({
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: {
+      type: 'shadow',
+    },
+  },
+  grid: {
+    left: '3%',
+    right: '4%',
+    bottom: '3%',
+    containLabel: true,
+  },
+  xAxis: {
+    type: 'category',
+    data: ['今日', '本周', '本月'],
+  },
+  yAxis: {
+    type: 'value',
+  },
+  series: [
+    {
+      name: '新增用户',
+      type: 'bar',
+      data: [
+        { value: stats.value.today_new_users, itemStyle: { color: '#52c41a' } },
+        { value: stats.value.this_week_new_users, itemStyle: { color: '#722ed1' } },
+        { value: stats.value.this_month_new_users, itemStyle: { color: '#fa8c16' } },
+      ],
+      barWidth: '50%',
+      label: {
+        show: true,
+        position: 'top',
+      },
+    },
+  ],
+}))
+
+// 邀请码使用统计柱状图配置
+const inviteCodeChartOption = computed(() => ({
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: {
+      type: 'shadow',
+    },
+  },
+  grid: {
+    left: '3%',
+    right: '4%',
+    bottom: '3%',
+    containLabel: true,
+  },
+  xAxis: {
+    type: 'category',
+    data: stats.value.top_invite_codes.map(item => item.invite_code),
+    axisLabel: {
+      interval: 0,
+      rotate: 30,
+      fontSize: 10,
+    },
+  },
+  yAxis: {
+    type: 'value',
+  },
+  series: [
+    {
+      name: '使用人数',
+      type: 'bar',
+      data: stats.value.top_invite_codes.map(item => ({
+        value: item.user_count,
+        itemStyle: { color: '#1890ff' },
+      })),
+      barWidth: '60%',
+      label: {
+        show: true,
+        position: 'top',
+        fontSize: 10,
+      },
+    },
+  ],
+}))
+
 // 表格列定义
 const columns = [
   {
     title: '邮箱',
     dataIndex: 'email',
     key: 'email',
+    width: 200,
     ellipsis: true,
   },
   {
     title: '姓名',
     dataIndex: 'name',
     key: 'name',
-    width: 120,
+    width: 100,
+    ellipsis: true,
   },
   {
     title: '域名',
     dataIndex: 'domain',
     key: 'domain',
-    width: 120,
+    width: 100,
   },
   {
     title: '套餐',
     dataIndex: 'tier',
     key: 'tier',
-    width: 100,
+    width: 80,
   },
   {
-    title: '注册状态',
+    title: '状态',
     dataIndex: 'flow_status',
     key: 'flow_status',
-    width: 110,
+    width: 90,
   },
   {
-    title: '登录方式',
+    title: '登录',
     dataIndex: 'auth_provider',
     key: 'auth_provider',
-    width: 100,
+    width: 80,
   },
   {
     title: '积分',
     dataIndex: 'credit_balance',
     key: 'credit_balance',
-    width: 80,
+    width: 60,
   },
   {
     title: '注册时间',
     dataIndex: 'created_at',
     key: 'created_at',
-    width: 180,
+    width: 160,
   },
   {
     title: '操作',
     key: 'action',
-    width: 80,
+    width: 60,
+    fixed: 'right' as const,
   },
 ]
 
@@ -127,6 +323,7 @@ const getFlowStatusTagColor = (status: string) => {
     domain: 'blue',
     resume: 'orange',
     success: 'green',
+    deleted: 'red',
   }
   return colors[status] || 'default'
 }
@@ -217,135 +414,104 @@ onMounted(() => {
       </template>
     </a-page-header>
 
-    <!-- 统计卡片 -->
+    <!-- 总用户数卡片 -->
     <a-row :gutter="16" class="stats-row">
       <a-col :span="6">
         <a-card :loading="loadingStats">
           <a-statistic
             title="总用户数"
             :value="stats.total_users"
-            :value-style="{ color: '#1890ff' }"
+            :value-style="{ color: '#1890ff', fontSize: '32px' }"
           >
             <template #prefix><TeamOutlined /></template>
           </a-statistic>
         </a-card>
       </a-col>
-      <a-col :span="6">
-        <a-card :loading="loadingStats">
-          <a-statistic
-            title="今日新增"
-            :value="stats.today_new_users"
-            :value-style="{ color: '#52c41a' }"
-          >
-            <template #prefix><UserOutlined /></template>
-          </a-statistic>
-        </a-card>
-      </a-col>
-      <a-col :span="6">
-        <a-card :loading="loadingStats">
-          <a-statistic
-            title="本周新增"
-            :value="stats.this_week_new_users"
-            :value-style="{ color: '#722ed1' }"
-          >
-            <template #prefix><CalendarOutlined /></template>
-          </a-statistic>
-        </a-card>
-      </a-col>
-      <a-col :span="6">
-        <a-card :loading="loadingStats">
-          <a-statistic
-            title="本月新增"
-            :value="stats.this_month_new_users"
-            :value-style="{ color: '#fa8c16' }"
-          >
-            <template #prefix><CalendarOutlined /></template>
-          </a-statistic>
+      <a-col :span="18">
+        <a-card :loading="loadingStats" title="用户增长趋势">
+          <v-chart :option="userGrowthChartOption" style="height: 120px" autoresize />
         </a-card>
       </a-col>
     </a-row>
 
-    <!-- 注册状态统计卡片 -->
+    <!-- 图表区域 -->
     <a-row :gutter="16" class="stats-row">
-      <a-col :span="6">
-        <a-card :loading="loadingStats">
-          <a-statistic
-            title="仅注册"
-            :value="stats.init_users"
-            :value-style="{ color: '#8c8c8c' }"
-          >
-            <template #prefix><FormOutlined /></template>
-          </a-statistic>
+      <a-col :span="12">
+        <a-card :loading="loadingStats" title="注册状态分布">
+          <v-chart :option="flowStatusChartOption" style="height: 280px" autoresize />
         </a-card>
       </a-col>
-      <a-col :span="6">
-        <a-card :loading="loadingStats">
-          <a-statistic
-            title="已申请域名"
-            :value="stats.domain_users"
-            :value-style="{ color: '#1890ff' }"
-          >
-            <template #prefix><GlobalOutlined /></template>
-          </a-statistic>
-        </a-card>
-      </a-col>
-      <a-col :span="6">
-        <a-card :loading="loadingStats">
-          <a-statistic
-            title="分析简历"
-            :value="stats.resume_users"
-            :value-style="{ color: '#fa8c16' }"
-          >
-            <template #prefix><FileTextOutlined /></template>
-          </a-statistic>
-        </a-card>
-      </a-col>
-      <a-col :span="6">
-        <a-card :loading="loadingStats">
-          <a-statistic
-            title="生成成功"
-            :value="stats.success_users"
-            :value-style="{ color: '#52c41a' }"
-          >
-            <template #prefix><CheckCircleOutlined /></template>
-          </a-statistic>
+      <a-col :span="12">
+        <a-card :loading="loadingStats" title="登录方式分布">
+          <v-chart :option="authProviderChartOption" style="height: 280px" autoresize />
         </a-card>
       </a-col>
     </a-row>
 
-    <!-- 登录方式统计卡片 -->
+    <!-- 邀请码统计 -->
     <a-row :gutter="16" class="stats-row">
-      <a-col :span="8">
-        <a-card :loading="loadingStats">
-          <a-statistic
-            title="邮箱注册"
-            :value="stats.email_users"
-            :value-style="{ color: '#8c8c8c' }"
-          >
-            <template #prefix><MailOutlined /></template>
-          </a-statistic>
+      <a-col :span="24">
+        <a-card :loading="loadingStats" title="邀请码使用统计（Top 10）">
+          <template v-if="stats.top_invite_codes.length > 0">
+            <v-chart :option="inviteCodeChartOption" style="height: 280px" autoresize />
+          </template>
+          <a-empty v-else description="暂无邀请码使用数据" />
         </a-card>
       </a-col>
-      <a-col :span="8">
-        <a-card :loading="loadingStats">
-          <a-statistic
-            title="Google 登录"
-            :value="stats.google_users"
-            :value-style="{ color: '#f5222d' }"
-          >
-            <template #prefix><GoogleOutlined /></template>
-          </a-statistic>
+    </a-row>
+
+    <!-- 详细数据卡片 -->
+    <a-row :gutter="16" class="stats-row">
+      <a-col :span="12">
+        <a-card :loading="loadingStats" title="注册状态明细" size="small">
+          <a-row :gutter="[16, 16]">
+            <a-col :span="8">
+              <a-statistic title="仅注册" :value="stats.init_users" :value-style="{ color: '#8c8c8c' }">
+                <template #prefix><FormOutlined /></template>
+              </a-statistic>
+            </a-col>
+            <a-col :span="8">
+              <a-statistic title="已申请域名" :value="stats.domain_users" :value-style="{ color: '#1890ff' }">
+                <template #prefix><GlobalOutlined /></template>
+              </a-statistic>
+            </a-col>
+            <a-col :span="8">
+              <a-statistic title="分析简历" :value="stats.resume_users" :value-style="{ color: '#fa8c16' }">
+                <template #prefix><FileTextOutlined /></template>
+              </a-statistic>
+            </a-col>
+            <a-col :span="8">
+              <a-statistic title="生成成功" :value="stats.success_users" :value-style="{ color: '#52c41a' }">
+                <template #prefix><CheckCircleOutlined /></template>
+              </a-statistic>
+            </a-col>
+            <a-col :span="8">
+              <a-statistic title="已注销" :value="stats.deleted_users" :value-style="{ color: '#ff4d4f' }">
+                <template #prefix><DeleteOutlined /></template>
+              </a-statistic>
+            </a-col>
+          </a-row>
         </a-card>
       </a-col>
-      <a-col :span="8">
-        <a-card :loading="loadingStats">
-          <a-statistic
-            title="GitHub 登录"
-            :value="stats.github_users"
-            :value-style="{ color: '#722ed1' }"
-          >
-            <template #prefix><GithubOutlined /></template>
-          </a-statistic>
+      <a-col :span="12">
+        <a-card :loading="loadingStats" title="登录方式明细" size="small">
+          <a-row :gutter="[16, 16]">
+            <a-col :span="8">
+              <a-statistic title="邮箱注册" :value="stats.email_users" :value-style="{ color: '#8c8c8c' }">
+                <template #prefix><MailOutlined /></template>
+              </a-statistic>
+            </a-col>
+            <a-col :span="8">
+              <a-statistic title="Google 登录" :value="stats.google_users" :value-style="{ color: '#f5222d' }">
+                <template #prefix><GoogleOutlined /></template>
+              </a-statistic>
+            </a-col>
+            <a-col :span="8">
+              <a-statistic title="GitHub 登录" :value="stats.github_users" :value-style="{ color: '#722ed1' }">
+                <template #prefix><GithubOutlined /></template>
+              </a-statistic>
+            </a-col>
+          </a-row>
         </a-card>
       </a-col>
     </a-row>
@@ -356,6 +522,7 @@ onMounted(() => {
         :columns="columns"
         :data-source="users"
         :loading="loadingUsers"
+        :scroll="{ x: 950 }"
         :pagination="{
           current: pagination.current,
           pageSize: pagination.pageSize,

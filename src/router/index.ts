@@ -133,6 +133,16 @@ const router = createRouter({
       },
     },
     {
+      path: '/domain-manage',
+      name: 'domain-manage',
+      component: () => import('@/views/DomainManageView.vue'),
+      meta: {
+        title: '域名管理',
+        icon: 'GlobalOutlined',
+        requiresAuth: true,
+      },
+    },
+    {
       path: '/custom_tool',
       name: 'custom_tool',
       component: () => import('@/views/ToolsView.vue'),

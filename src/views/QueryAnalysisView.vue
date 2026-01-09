@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons-vue'
 import { statsService } from '@/services/statsService'
 import type { QueryStats, TopUserItem, QueryItem } from '@/types/stats'
+import { SEARCH_TYPE_LABELS } from '@/types/stats'
 import { formatDateTime } from '@/utils/formatter'
 
 // 统计数据
@@ -29,6 +30,8 @@ const loadingTopUsers = ref(false)
 
 // Query 列表
 const selectedUserId = ref<string | null>(null)
+const selectedUserName = ref<string | null>(null)
+const selectedUserEmail = ref<string | null>(null)
 const queries = ref<QueryItem[]>([])
 const loadingQueries = ref(false)
 const queryPagination = ref({
@@ -64,21 +67,29 @@ const topUsersColumns = [
     width: 60,
   },
   {
-    title: '用户ID',
-    dataIndex: 'user_id',
-    key: 'user_id',
+    title: '邮箱',
+    dataIndex: 'email',
+    key: 'email',
+    width: 200,
+    ellipsis: true,
+  },
+  {
+    title: '姓名',
+    dataIndex: 'name',
+    key: 'name',
+    width: 100,
     ellipsis: true,
   },
   {
     title: 'Query 次数',
     dataIndex: 'query_count',
     key: 'query_count',
-    width: 120,
+    width: 100,
   },
   {
     title: '操作',
     key: 'action',
-    width: 100,
+    width: 80,
   },
 ]
 
@@ -91,22 +102,28 @@ const queryColumns = [
     ellipsis: true,
   },
   {
+    title: '类型',
+    dataIndex: 'search_type',
+    key: 'search_type',
+    width: 100,
+  },
+  {
     title: '结果数',
     dataIndex: 'result_count',
     key: 'result_count',
-    width: 80,
+    width: 70,
   },
   {
     title: '耗时(ms)',
     dataIndex: 'duration_ms',
     key: 'duration_ms',
-    width: 100,
+    width: 90,
   },
   {
     title: '时间',
     dataIndex: 'created_at',
     key: 'created_at',
-    width: 180,
+    width: 160,
   },
 ]
 
@@ -146,8 +163,10 @@ const handleMonthChange = () => {
 }
 
 // 查看用户 Query 列表
-const viewUserQueries = (userId: string) => {
-  selectedUserId.value = userId
+const viewUserQueries = (user: TopUserItem) => {
+  selectedUserId.value = user.user_id
+  selectedUserName.value = user.name || null
+  selectedUserEmail.value = user.email || null
   queryPagination.value.current = 1
   loadQueries()
 }
@@ -182,6 +201,8 @@ const handleQueryTableChange = (pag: any) => {
 // 返回前十列表
 const backToTopUsers = () => {
   selectedUserId.value = null
+  selectedUserName.value = null
+  selectedUserEmail.value = null
   queries.value = []
 }
 
@@ -279,18 +300,18 @@ onMounted(() => {
               }"
             />
           </template>
-          <template v-else-if="column.key === 'user_id'">
-            <a-typography-text copyable :content="record.user_id">
-              <UserOutlined style="margin-right: 8px" />
-              {{ record.user_id }}
-            </a-typography-text>
+          <template v-else-if="column.key === 'email'">
+            {{ record.email || '-' }}
+          </template>
+          <template v-else-if="column.key === 'name'">
+            {{ record.name || '-' }}
           </template>
           <template v-else-if="column.key === 'query_count'">
             <a-tag color="blue">{{ record.query_count }}</a-tag>
           </template>
           <template v-else-if="column.key === 'action'">
-            <a-button type="link" size="small" @click="viewUserQueries(record.user_id)">
-              查看详情
+            <a-button type="link" size="small" @click="viewUserQueries(record)">
+              详情
             </a-button>
           </template>
         </template>
@@ -311,7 +332,7 @@ onMounted(() => {
           </a-button>
           <a-divider type="vertical" />
           <UserOutlined />
-          <span>{{ selectedUserId }} 的 Query 历史</span>
+          <span>{{ selectedUserName || selectedUserEmail || selectedUserId }} 的 Query 历史</span>
         </a-space>
       </template>
 
@@ -335,6 +356,11 @@ onMounted(() => {
             <a-tooltip :title="record.query" placement="topLeft">
               <span>{{ record.query }}</span>
             </a-tooltip>
+          </template>
+          <template v-else-if="column.key === 'search_type'">
+            <a-tag :color="record.search_type === 'global' ? 'blue' : 'green'">
+              {{ SEARCH_TYPE_LABELS[record.search_type] || record.search_type || '-' }}
+            </a-tag>
           </template>
           <template v-else-if="column.key === 'result_count'">
             {{ record.result_count ?? '-' }}
