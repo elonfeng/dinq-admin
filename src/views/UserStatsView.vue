@@ -41,8 +41,11 @@ const stats = ref<UserStats>({
   github_users: 0,
   free_users: 0,
   basic_monthly_users: 0,
+  basic_yearly_users: 0,
   pro_monthly_users: 0,
+  pro_yearly_users: 0,
   plus_monthly_users: 0,
+  plus_yearly_users: 0,
   total_paid_users: 0,
   top_invite_codes: [],
 })
@@ -146,7 +149,7 @@ const paidColumns = [
     title: '邮箱/GitHub',
     dataIndex: 'email',
     key: 'email',
-    width: 200,
+    width: 180,
     ellipsis: true,
   },
   {
@@ -164,27 +167,21 @@ const paidColumns = [
   },
   {
     title: '套餐',
-    dataIndex: 'tier',
-    key: 'tier',
-    width: 100,
+    dataIndex: 'plan',
+    key: 'plan',
+    width: 120,
   },
   {
-    title: '状态',
-    dataIndex: 'flow_status',
-    key: 'flow_status',
+    title: '订阅状态',
+    dataIndex: 'plan_status',
+    key: 'plan_status',
     width: 90,
   },
   {
-    title: '登录',
-    dataIndex: 'auth_provider',
-    key: 'auth_provider',
-    width: 80,
-  },
-  {
-    title: '积分',
-    dataIndex: 'credit_balance',
-    key: 'credit_balance',
-    width: 60,
+    title: '到期时间',
+    dataIndex: 'current_period_end',
+    key: 'current_period_end',
+    width: 160,
   },
   {
     title: '注册时间',
@@ -448,23 +445,40 @@ onMounted(() => {
             <template #prefix><CrownOutlined /></template>
           </a-statistic>
         </a-col>
-        <a-col :span="5">
+        <a-col :span="4">
           <a-statistic title="Free" :value="stats.free_users" :value-style="{ color: '#8c8c8c' }">
             <template #prefix><UserOutlined /></template>
           </a-statistic>
         </a-col>
-        <a-col :span="5">
-          <a-statistic title="Basic" :value="stats.basic_monthly_users" :value-style="{ color: '#1890ff' }">
+        <a-col :span="4">
+          <a-statistic title="Basic月付" :value="stats.basic_monthly_users" :value-style="{ color: '#1890ff' }">
             <template #prefix><DollarOutlined /></template>
           </a-statistic>
         </a-col>
-        <a-col :span="5">
-          <a-statistic title="Pro" :value="stats.pro_monthly_users" :value-style="{ color: '#722ed1' }">
+        <a-col :span="4">
+          <a-statistic title="Basic年付" :value="stats.basic_yearly_users" :value-style="{ color: '#1890ff' }">
             <template #prefix><DollarOutlined /></template>
           </a-statistic>
         </a-col>
-        <a-col :span="5">
-          <a-statistic title="Plus" :value="stats.plus_monthly_users" :value-style="{ color: '#faad14' }">
+        <a-col :span="4">
+          <a-statistic title="Pro月付" :value="stats.pro_monthly_users" :value-style="{ color: '#722ed1' }">
+            <template #prefix><DollarOutlined /></template>
+          </a-statistic>
+        </a-col>
+        <a-col :span="4">
+          <a-statistic title="Pro年付" :value="stats.pro_yearly_users" :value-style="{ color: '#722ed1' }">
+            <template #prefix><DollarOutlined /></template>
+          </a-statistic>
+        </a-col>
+      </a-row>
+      <a-row :gutter="[24, 16]" style="margin-top: 16px">
+        <a-col :span="4">
+          <a-statistic title="Plus月付" :value="stats.plus_monthly_users" :value-style="{ color: '#faad14' }">
+            <template #prefix><DollarOutlined /></template>
+          </a-statistic>
+        </a-col>
+        <a-col :span="4">
+          <a-statistic title="Plus年付" :value="stats.plus_yearly_users" :value-style="{ color: '#faad14' }">
             <template #prefix><DollarOutlined /></template>
           </a-statistic>
         </a-col>
@@ -563,23 +577,18 @@ onMounted(() => {
                 <a-tag v-if="record.domain" color="blue">{{ record.domain }}</a-tag>
                 <span v-else class="text-muted">-</span>
               </template>
-              <template v-else-if="column.key === 'tier'">
-                <a-tag :color="getTierTagColor(record.tier)">
-                  {{ TIER_LABELS[record.tier] || record.tier || 'Free' }}
+              <template v-else-if="column.key === 'plan'">
+                <a-tag :color="getTierTagColor(record.plan)">
+                  {{ TIER_LABELS[record.plan] || record.plan || '-' }}
                 </a-tag>
               </template>
-              <template v-else-if="column.key === 'flow_status'">
-                <a-tag :color="getFlowStatusTagColor(record.flow_status)">
-                  {{ FLOW_STATUS_LABELS[record.flow_status] || record.flow_status || '-' }}
+              <template v-else-if="column.key === 'plan_status'">
+                <a-tag :color="record.plan_status === 'active' ? 'green' : 'orange'">
+                  {{ record.plan_status || '-' }}
                 </a-tag>
               </template>
-              <template v-else-if="column.key === 'auth_provider'">
-                <a-tag :color="getAuthProviderTagColor(record.auth_provider)">
-                  {{ AUTH_PROVIDER_LABELS[record.auth_provider] || record.auth_provider || '-' }}
-                </a-tag>
-              </template>
-              <template v-else-if="column.key === 'credit_balance'">
-                {{ record.credit_balance }}
+              <template v-else-if="column.key === 'current_period_end'">
+                {{ record.current_period_end ? formatDateTime(record.current_period_end) : '-' }}
               </template>
               <template v-else-if="column.key === 'created_at'">
                 {{ record.created_at ? formatDateTime(record.created_at) : '-' }}

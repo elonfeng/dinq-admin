@@ -37,8 +37,11 @@ export const statsService = {
       github_users: data.github_users || 0,
       free_users: data.free_users || 0,
       basic_monthly_users: data.basic_monthly_users || 0,
+      basic_yearly_users: data.basic_yearly_users || 0,
       pro_monthly_users: data.pro_monthly_users || 0,
+      pro_yearly_users: data.pro_yearly_users || 0,
       plus_monthly_users: data.plus_monthly_users || 0,
+      plus_yearly_users: data.plus_yearly_users || 0,
       total_paid_users: data.total_paid_users || 0,
       top_invite_codes: data.top_invite_codes || [],
     }

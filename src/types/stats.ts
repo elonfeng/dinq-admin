@@ -29,8 +29,11 @@ export interface UserStats {
   // 按套餐统计
   free_users: number
   basic_monthly_users: number
+  basic_yearly_users: number
   pro_monthly_users: number
+  pro_yearly_users: number
   plus_monthly_users: number
+  plus_yearly_users: number
   total_paid_users: number
   // 邀请码统计
   top_invite_codes: InviteCodeStat[]
@@ -65,9 +68,10 @@ export interface PaidUserInfo {
   name: string
   domain: string
   tier: string
-  flow_status: string
-  auth_provider: string
-  credit_balance: number
+  plan: string
+  plan_status: string
+  current_period_start: string | null
+  current_period_end: string | null
   created_at: string
 }
 
