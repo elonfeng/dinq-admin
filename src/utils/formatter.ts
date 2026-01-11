@@ -21,19 +21,26 @@ export function formatDate(date: string | Date, locale: string = 'zh-CN'): strin
 }
 
 /**
- * Format datetime to localized string with time
+ * Format datetime to localized string
  */
-export function formatDateTime(date: string | Date, locale: string = 'zh-CN'): string {
+export function formatDateTime(date: string | Date): string {
   try {
-    const d = typeof date === 'string' ? new Date(date) : date
-    return d.toLocaleString(locale, {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    })
+    if (typeof date === 'string') {
+      // 直接解析ISO字符串，不做时区转换
+      // 2026-01-11T12:35:16.849311Z -> 2026/01/11 12:35:16
+      const match = date.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/)
+      if (match) {
+        return `${match[1]}/${match[2]}/${match[3]} ${match[4]}:${match[5]}:${match[6]}`
+      }
+      return date
+    }
+    // Date对象用toISOString然后格式化
+    const iso = date.toISOString()
+    const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/)
+    if (match) {
+      return `${match[1]}/${match[2]}/${match[3]} ${match[4]}:${match[5]}:${match[6]}`
+    }
+    return String(date)
   } catch (error) {
     console.error('Failed to format datetime:', error)
     return String(date)
