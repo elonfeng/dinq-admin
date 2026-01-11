@@ -58,7 +58,7 @@ const loadingDetail = ref(false)
 // 表格列定义
 const columns = [
   {
-    title: '邮箱',
+    title: '邮箱/GitHub',
     dataIndex: 'email',
     key: 'email',
     width: 200,
