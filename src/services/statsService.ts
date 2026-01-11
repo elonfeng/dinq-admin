@@ -35,7 +35,6 @@ export const statsService = {
       email_users: data.email_users || 0,
       google_users: data.google_users || 0,
       github_users: data.github_users || 0,
-      free_users: data.free_users || 0,
       basic_monthly_users: data.basic_monthly_users || 0,
       basic_yearly_users: data.basic_yearly_users || 0,
       pro_monthly_users: data.pro_monthly_users || 0,

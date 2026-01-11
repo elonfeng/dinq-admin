@@ -26,8 +26,7 @@ export interface UserStats {
   email_users: number
   google_users: number
   github_users: number
-  // 按套餐统计
-  free_users: number
+  // 按套餐统计（付费用户）
   basic_monthly_users: number
   basic_yearly_users: number
   pro_monthly_users: number
@@ -69,8 +68,9 @@ export interface PaidUserInfo {
   domain: string
   tier: string
   plan: string
+  order_status: string
   plan_status: string
-  current_period_start: string | null
+  paid_at: string | null
   current_period_end: string | null
   created_at: string
 }

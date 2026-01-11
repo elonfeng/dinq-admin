@@ -39,7 +39,6 @@ const stats = ref<UserStats>({
   email_users: 0,
   google_users: 0,
   github_users: 0,
-  free_users: 0,
   basic_monthly_users: 0,
   basic_yearly_users: 0,
   pro_monthly_users: 0,
@@ -160,33 +159,27 @@ const paidColumns = [
     ellipsis: true,
   },
   {
-    title: '域名',
-    dataIndex: 'domain',
-    key: 'domain',
-    width: 100,
-  },
-  {
     title: '套餐',
     dataIndex: 'plan',
     key: 'plan',
     width: 120,
   },
   {
-    title: '订阅状态',
-    dataIndex: 'plan_status',
-    key: 'plan_status',
+    title: '订单状态',
+    dataIndex: 'order_status',
+    key: 'order_status',
     width: 90,
+  },
+  {
+    title: '支付时间',
+    dataIndex: 'paid_at',
+    key: 'paid_at',
+    width: 160,
   },
   {
     title: '到期时间',
     dataIndex: 'current_period_end',
     key: 'current_period_end',
-    width: 160,
-  },
-  {
-    title: '注册时间',
-    dataIndex: 'created_at',
-    key: 'created_at',
     width: 160,
   },
   {
@@ -437,17 +430,12 @@ onMounted(() => {
       </a-row>
     </a-card>
 
-    <!-- 套餐统计 -->
-    <a-card :loading="loadingStats" title="套餐分布" class="stats-card">
+    <!-- 付费用户统计 -->
+    <a-card :loading="loadingStats" title="付费用户统计" class="stats-card">
       <a-row :gutter="[24, 16]">
         <a-col :span="4">
           <a-statistic title="付费总数" :value="stats.total_paid_users" :value-style="{ color: '#faad14', fontSize: '24px' }">
             <template #prefix><CrownOutlined /></template>
-          </a-statistic>
-        </a-col>
-        <a-col :span="4">
-          <a-statistic title="Free" :value="stats.free_users" :value-style="{ color: '#8c8c8c' }">
-            <template #prefix><UserOutlined /></template>
           </a-statistic>
         </a-col>
         <a-col :span="4">
@@ -470,13 +458,13 @@ onMounted(() => {
             <template #prefix><DollarOutlined /></template>
           </a-statistic>
         </a-col>
-      </a-row>
-      <a-row :gutter="[24, 16]" style="margin-top: 16px">
         <a-col :span="4">
           <a-statistic title="Plus月付" :value="stats.plus_monthly_users" :value-style="{ color: '#faad14' }">
             <template #prefix><DollarOutlined /></template>
           </a-statistic>
         </a-col>
+      </a-row>
+      <a-row :gutter="[24, 16]" style="margin-top: 16px">
         <a-col :span="4">
           <a-statistic title="Plus年付" :value="stats.plus_yearly_users" :value-style="{ color: '#faad14' }">
             <template #prefix><DollarOutlined /></template>
@@ -573,25 +561,21 @@ onMounted(() => {
               <template v-else-if="column.key === 'name'">
                 {{ record.name || '-' }}
               </template>
-              <template v-else-if="column.key === 'domain'">
-                <a-tag v-if="record.domain" color="blue">{{ record.domain }}</a-tag>
-                <span v-else class="text-muted">-</span>
-              </template>
               <template v-else-if="column.key === 'plan'">
                 <a-tag :color="getTierTagColor(record.plan)">
                   {{ TIER_LABELS[record.plan] || record.plan || '-' }}
                 </a-tag>
               </template>
-              <template v-else-if="column.key === 'plan_status'">
-                <a-tag :color="record.plan_status === 'active' ? 'green' : 'orange'">
-                  {{ record.plan_status || '-' }}
+              <template v-else-if="column.key === 'order_status'">
+                <a-tag :color="record.order_status === 'succeeded' ? 'green' : record.order_status === 'pending' ? 'orange' : 'red'">
+                  {{ record.order_status || '-' }}
                 </a-tag>
+              </template>
+              <template v-else-if="column.key === 'paid_at'">
+                {{ record.paid_at ? formatDateTime(record.paid_at) : '-' }}
               </template>
               <template v-else-if="column.key === 'current_period_end'">
                 {{ record.current_period_end ? formatDateTime(record.current_period_end) : '-' }}
-              </template>
-              <template v-else-if="column.key === 'created_at'">
-                {{ record.created_at ? formatDateTime(record.created_at) : '-' }}
               </template>
               <template v-else-if="column.key === 'action'">
                 <a-button type="link" size="small" @click="showDetail(record.user_id)">
