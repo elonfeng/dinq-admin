@@ -17,9 +17,11 @@ import {
   GoogleOutlined,
   GithubOutlined,
   DeleteOutlined,
+  DollarOutlined,
+  CrownOutlined,
 } from '@ant-design/icons-vue'
 import { statsService } from '@/services/statsService'
-import type { UserStats, RecentUserInfo, UserDetailInfo } from '@/types/stats'
+import type { UserStats, RecentUserInfo, UserDetailInfo, PaidUserInfo } from '@/types/stats'
 import { TIER_LABELS, FLOW_STATUS_LABELS, AUTH_PROVIDER_LABELS } from '@/types/stats'
 import { formatDateTime } from '@/utils/formatter'
 
@@ -37,14 +39,31 @@ const stats = ref<UserStats>({
   email_users: 0,
   google_users: 0,
   github_users: 0,
+  free_users: 0,
+  basic_monthly_users: 0,
+  pro_monthly_users: 0,
+  plus_monthly_users: 0,
+  total_paid_users: 0,
   top_invite_codes: [],
 })
 const loadingStats = ref(false)
+
+// 当前Tab
+const activeTab = ref('recent')
 
 // 用户列表
 const users = ref<RecentUserInfo[]>([])
 const loadingUsers = ref(false)
 const pagination = ref({
+  current: 1,
+  pageSize: 20,
+  total: 0,
+})
+
+// 付费用户列表
+const paidUsers = ref<PaidUserInfo[]>([])
+const loadingPaidUsers = ref(false)
+const paidPagination = ref({
   current: 1,
   pageSize: 20,
   total: 0,
@@ -100,6 +119,66 @@ const columns = [
     dataIndex: 'invite_code',
     key: 'invite_code',
     width: 100,
+  },
+  {
+    title: '积分',
+    dataIndex: 'credit_balance',
+    key: 'credit_balance',
+    width: 60,
+  },
+  {
+    title: '注册时间',
+    dataIndex: 'created_at',
+    key: 'created_at',
+    width: 160,
+  },
+  {
+    title: '操作',
+    key: 'action',
+    width: 60,
+    fixed: 'right' as const,
+  },
+]
+
+// 付费用户表格列定义
+const paidColumns = [
+  {
+    title: '邮箱/GitHub',
+    dataIndex: 'email',
+    key: 'email',
+    width: 200,
+    ellipsis: true,
+  },
+  {
+    title: '姓名',
+    dataIndex: 'name',
+    key: 'name',
+    width: 100,
+    ellipsis: true,
+  },
+  {
+    title: '域名',
+    dataIndex: 'domain',
+    key: 'domain',
+    width: 100,
+  },
+  {
+    title: '套餐',
+    dataIndex: 'tier',
+    key: 'tier',
+    width: 100,
+  },
+  {
+    title: '状态',
+    dataIndex: 'flow_status',
+    key: 'flow_status',
+    width: 90,
+  },
+  {
+    title: '登录',
+    dataIndex: 'auth_provider',
+    key: 'auth_provider',
+    width: 80,
   },
   {
     title: '积分',
@@ -192,6 +271,39 @@ const handleTableChange = (pag: any) => {
   loadUsers()
 }
 
+// 加载付费用户列表
+const loadPaidUsers = async () => {
+  loadingPaidUsers.value = true
+  try {
+    const result = await statsService.getPaidUsers(
+      paidPagination.value.current,
+      paidPagination.value.pageSize
+    )
+    paidUsers.value = result.items
+    paidPagination.value.total = result.total
+  } catch (e) {
+    console.error('Failed to load paid users:', e)
+    message.error('加载付费用户列表失败')
+  } finally {
+    loadingPaidUsers.value = false
+  }
+}
+
+// 付费用户分页变化
+const handlePaidTableChange = (pag: any) => {
+  paidPagination.value.current = pag.current
+  paidPagination.value.pageSize = pag.pageSize
+  loadPaidUsers()
+}
+
+// Tab切换
+const handleTabChange = (key: string) => {
+  activeTab.value = key
+  if (key === 'paid' && paidUsers.value.length === 0) {
+    loadPaidUsers()
+  }
+}
+
 // 查看用户详情
 const showDetail = async (userId: string) => {
   detailVisible.value = true
@@ -210,7 +322,11 @@ const showDetail = async (userId: string) => {
 // 刷新数据
 const refresh = () => {
   loadStats()
-  loadUsers()
+  if (activeTab.value === 'recent') {
+    loadUsers()
+  } else {
+    loadPaidUsers()
+  }
 }
 
 onMounted(() => {
@@ -324,67 +440,159 @@ onMounted(() => {
       </a-row>
     </a-card>
 
-    <!-- 最新注册用户列表 -->
-    <a-card title="最新注册用户" class="stats-card">
-      <a-table
-        :columns="columns"
-        :data-source="users"
-        :loading="loadingUsers"
-        :scroll="{ x: 1050 }"
-        :pagination="{
-          current: pagination.current,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total: number) => `共 ${total} 条`,
-        }"
-        row-key="user_id"
-        @change="handleTableChange"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'email'">
-            {{ record.email || '-' }}
-          </template>
-          <template v-else-if="column.key === 'name'">
-            {{ record.name || '-' }}
-          </template>
-          <template v-else-if="column.key === 'domain'">
-            <a-tag v-if="record.domain" color="blue">{{ record.domain }}</a-tag>
-            <span v-else class="text-muted">-</span>
-          </template>
-          <template v-else-if="column.key === 'tier'">
-            <a-tag :color="getTierTagColor(record.tier)">
-              {{ TIER_LABELS[record.tier] || record.tier || 'Free' }}
-            </a-tag>
-          </template>
-          <template v-else-if="column.key === 'flow_status'">
-            <a-tag :color="getFlowStatusTagColor(record.flow_status)">
-              {{ FLOW_STATUS_LABELS[record.flow_status] || record.flow_status || '-' }}
-            </a-tag>
-          </template>
-          <template v-else-if="column.key === 'auth_provider'">
-            <a-tag :color="getAuthProviderTagColor(record.auth_provider)">
-              {{ AUTH_PROVIDER_LABELS[record.auth_provider] || record.auth_provider || '-' }}
-            </a-tag>
-          </template>
-          <template v-else-if="column.key === 'invite_code'">
-            <code v-if="record.invite_code" class="invite-code">{{ record.invite_code }}</code>
-            <span v-else class="text-muted">-</span>
-          </template>
-          <template v-else-if="column.key === 'credit_balance'">
-            {{ record.credit_balance }}
-          </template>
-          <template v-else-if="column.key === 'created_at'">
-            {{ record.created_at ? formatDateTime(record.created_at) : '-' }}
-          </template>
-          <template v-else-if="column.key === 'action'">
-            <a-button type="link" size="small" @click="showDetail(record.user_id)">
-              详情
-            </a-button>
-          </template>
-        </template>
-      </a-table>
+    <!-- 套餐统计 -->
+    <a-card :loading="loadingStats" title="套餐分布" class="stats-card">
+      <a-row :gutter="[24, 16]">
+        <a-col :span="4">
+          <a-statistic title="付费总数" :value="stats.total_paid_users" :value-style="{ color: '#faad14', fontSize: '24px' }">
+            <template #prefix><CrownOutlined /></template>
+          </a-statistic>
+        </a-col>
+        <a-col :span="5">
+          <a-statistic title="Free" :value="stats.free_users" :value-style="{ color: '#8c8c8c' }">
+            <template #prefix><UserOutlined /></template>
+          </a-statistic>
+        </a-col>
+        <a-col :span="5">
+          <a-statistic title="Basic" :value="stats.basic_monthly_users" :value-style="{ color: '#1890ff' }">
+            <template #prefix><DollarOutlined /></template>
+          </a-statistic>
+        </a-col>
+        <a-col :span="5">
+          <a-statistic title="Pro" :value="stats.pro_monthly_users" :value-style="{ color: '#722ed1' }">
+            <template #prefix><DollarOutlined /></template>
+          </a-statistic>
+        </a-col>
+        <a-col :span="5">
+          <a-statistic title="Plus" :value="stats.plus_monthly_users" :value-style="{ color: '#faad14' }">
+            <template #prefix><DollarOutlined /></template>
+          </a-statistic>
+        </a-col>
+      </a-row>
+    </a-card>
+
+    <!-- 用户列表 -->
+    <a-card class="stats-card">
+      <a-tabs v-model:activeKey="activeTab" @change="handleTabChange">
+        <a-tab-pane key="recent" tab="最新注册用户">
+          <a-table
+            :columns="columns"
+            :data-source="users"
+            :loading="loadingUsers"
+            :scroll="{ x: 1050 }"
+            :pagination="{
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total: number) => `共 ${total} 条`,
+            }"
+            row-key="user_id"
+            @change="handleTableChange"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'email'">
+                {{ record.email || '-' }}
+              </template>
+              <template v-else-if="column.key === 'name'">
+                {{ record.name || '-' }}
+              </template>
+              <template v-else-if="column.key === 'domain'">
+                <a-tag v-if="record.domain" color="blue">{{ record.domain }}</a-tag>
+                <span v-else class="text-muted">-</span>
+              </template>
+              <template v-else-if="column.key === 'tier'">
+                <a-tag :color="getTierTagColor(record.tier)">
+                  {{ TIER_LABELS[record.tier] || record.tier || 'Free' }}
+                </a-tag>
+              </template>
+              <template v-else-if="column.key === 'flow_status'">
+                <a-tag :color="getFlowStatusTagColor(record.flow_status)">
+                  {{ FLOW_STATUS_LABELS[record.flow_status] || record.flow_status || '-' }}
+                </a-tag>
+              </template>
+              <template v-else-if="column.key === 'auth_provider'">
+                <a-tag :color="getAuthProviderTagColor(record.auth_provider)">
+                  {{ AUTH_PROVIDER_LABELS[record.auth_provider] || record.auth_provider || '-' }}
+                </a-tag>
+              </template>
+              <template v-else-if="column.key === 'invite_code'">
+                <code v-if="record.invite_code" class="invite-code">{{ record.invite_code }}</code>
+                <span v-else class="text-muted">-</span>
+              </template>
+              <template v-else-if="column.key === 'credit_balance'">
+                {{ record.credit_balance }}
+              </template>
+              <template v-else-if="column.key === 'created_at'">
+                {{ record.created_at ? formatDateTime(record.created_at) : '-' }}
+              </template>
+              <template v-else-if="column.key === 'action'">
+                <a-button type="link" size="small" @click="showDetail(record.user_id)">
+                  详情
+                </a-button>
+              </template>
+            </template>
+          </a-table>
+        </a-tab-pane>
+        <a-tab-pane key="paid" tab="付费用户">
+          <a-table
+            :columns="paidColumns"
+            :data-source="paidUsers"
+            :loading="loadingPaidUsers"
+            :scroll="{ x: 950 }"
+            :pagination="{
+              current: paidPagination.current,
+              pageSize: paidPagination.pageSize,
+              total: paidPagination.total,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total: number) => `共 ${total} 条`,
+            }"
+            row-key="user_id"
+            @change="handlePaidTableChange"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'email'">
+                {{ record.email || '-' }}
+              </template>
+              <template v-else-if="column.key === 'name'">
+                {{ record.name || '-' }}
+              </template>
+              <template v-else-if="column.key === 'domain'">
+                <a-tag v-if="record.domain" color="blue">{{ record.domain }}</a-tag>
+                <span v-else class="text-muted">-</span>
+              </template>
+              <template v-else-if="column.key === 'tier'">
+                <a-tag :color="getTierTagColor(record.tier)">
+                  {{ TIER_LABELS[record.tier] || record.tier || 'Free' }}
+                </a-tag>
+              </template>
+              <template v-else-if="column.key === 'flow_status'">
+                <a-tag :color="getFlowStatusTagColor(record.flow_status)">
+                  {{ FLOW_STATUS_LABELS[record.flow_status] || record.flow_status || '-' }}
+                </a-tag>
+              </template>
+              <template v-else-if="column.key === 'auth_provider'">
+                <a-tag :color="getAuthProviderTagColor(record.auth_provider)">
+                  {{ AUTH_PROVIDER_LABELS[record.auth_provider] || record.auth_provider || '-' }}
+                </a-tag>
+              </template>
+              <template v-else-if="column.key === 'credit_balance'">
+                {{ record.credit_balance }}
+              </template>
+              <template v-else-if="column.key === 'created_at'">
+                {{ record.created_at ? formatDateTime(record.created_at) : '-' }}
+              </template>
+              <template v-else-if="column.key === 'action'">
+                <a-button type="link" size="small" @click="showDetail(record.user_id)">
+                  详情
+                </a-button>
+              </template>
+            </template>
+          </a-table>
+        </a-tab-pane>
+      </a-tabs>
     </a-card>
 
     <!-- 用户详情抽屉 -->

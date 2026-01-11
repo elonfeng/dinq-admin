@@ -7,6 +7,7 @@ import type {
   UserStats,
   RecentUsersResponse,
   UserDetailInfo,
+  PaidUsersResponse,
   QueryStats,
   TopUsersResponse,
   QueryListResponse,
@@ -34,6 +35,11 @@ export const statsService = {
       email_users: data.email_users || 0,
       google_users: data.google_users || 0,
       github_users: data.github_users || 0,
+      free_users: data.free_users || 0,
+      basic_monthly_users: data.basic_monthly_users || 0,
+      pro_monthly_users: data.pro_monthly_users || 0,
+      plus_monthly_users: data.plus_monthly_users || 0,
+      total_paid_users: data.total_paid_users || 0,
       top_invite_codes: data.top_invite_codes || [],
     }
   },
@@ -43,6 +49,16 @@ export const statsService = {
    */
   async getRecentUsers(page = 1, pageSize = 20): Promise<RecentUsersResponse> {
     const response = await apiClient.get('/admin/users/recent', {
+      params: { page, page_size: pageSize },
+    })
+    return response.data?.data || response.data
+  },
+
+  /**
+   * 获取付费用户列表
+   */
+  async getPaidUsers(page = 1, pageSize = 20): Promise<PaidUsersResponse> {
+    const response = await apiClient.get('/admin/users/paid', {
       params: { page, page_size: pageSize },
     })
     return response.data?.data || response.data

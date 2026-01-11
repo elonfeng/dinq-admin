@@ -26,6 +26,12 @@ export interface UserStats {
   email_users: number
   google_users: number
   github_users: number
+  // 按套餐统计
+  free_users: number
+  basic_monthly_users: number
+  pro_monthly_users: number
+  plus_monthly_users: number
+  total_paid_users: number
   // 邀请码统计
   top_invite_codes: InviteCodeStat[]
 }
@@ -47,6 +53,27 @@ export interface RecentUserInfo {
 // 最新用户列表响应
 export interface RecentUsersResponse {
   items: RecentUserInfo[]
+  total: number
+  page: number
+  page_size: number
+}
+
+// 付费用户信息
+export interface PaidUserInfo {
+  user_id: string
+  email: string
+  name: string
+  domain: string
+  tier: string
+  flow_status: string
+  auth_provider: string
+  credit_balance: number
+  created_at: string
+}
+
+// 付费用户列表响应
+export interface PaidUsersResponse {
+  items: PaidUserInfo[]
   total: number
   page: number
   page_size: number
